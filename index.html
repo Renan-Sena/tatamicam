@@ -1,0 +1,2141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>FEJAMA · TatamiCam</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,900;1,700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --red: #C0202A;
+            --navy: #0C1E3C;
+            --n2: #0F2648;
+            --n3: #1A3060;
+            --gold: #D4A017;
+            --white: #FFFFFF;
+            --grey: #8090A8;
+            --bg: #F2F4F7;
+        }
+
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Barlow Condensed', sans-serif;
+            background: var(--navy);
+            color: var(--white);
+            line-height: 1.2;
+            overflow-x: hidden;
+        }
+
+        .hdr {
+            background: var(--navy);
+            border-bottom: 2px solid var(--red);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 60px;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .hdr-l {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-ph {
+            width: 40px;
+            height: 40px;
+            background: var(--red);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .logo-img {
+            height: 60px;
+            width: auto;
+            max-width: 150px;
+            object-fit: contain;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .logo-txt {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-main {
+            font-size: clamp(20px, 4vw, 26px);
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .logo-sub {
+            font-size: clamp(8px, 1.8vw, 10px);
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            text-transform: uppercase;
+        }
+
+        .hdr-r {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pill {
+            font-weight: 700;
+            font-size: clamp(10px, 2.5vw, 13px);
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--n3);
+            white-space: nowrap;
+            transition: background .3s;
+        }
+
+        .pill.live {
+            background: var(--red);
+            box-shadow: 0 0 8px rgba(192, 32, 42, .6);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--white);
+            animation: blink 1.2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1 }
+            50% { opacity: .15 }
+        }
+
+        .btn-help {
+            background: none;
+            border: 2px solid var(--n3);
+            color: var(--grey);
+            border-radius: 999px;
+            padding: 5px 12px;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: border-color .15s, color .15s;
+        }
+
+        .btn-help:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .stage {
+            background: var(--navy);
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stage::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                repeating-linear-gradient(45deg, rgba(192, 32, 42, .07) 0px, rgba(192, 32, 42, .07) 2px, transparent 2px, transparent 12px),
+                repeating-linear-gradient(135deg, rgba(26, 48, 96, .13) 0px, rgba(26, 48, 96, .13) 3px, transparent 3px, transparent 18px);
+            pointer-events: none;
+        }
+
+        .stage-box {
+            width: 100%;
+            max-width: 960px;
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--n3);
+            box-shadow: 0 8px 32px #0009;
+            aspect-ratio: 16/9;
+            background: #000;
+            z-index: 1;
+        }
+
+        .v-wrap {
+            position: absolute;
+            inset: 0;
+            transition: opacity .22s;
+        }
+
+        .v-wrap.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .v-wrap video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #000;
+            display: block;
+            cursor: pointer;
+        }
+
+        video::-webkit-media-controls,
+        video::-webkit-media-controls-enclosure {
+            display: none !important;
+        }
+
+        .badge-live {
+            position: absolute;
+            top: 12px;
+            left: 14px;
+            background: var(--red);
+            padding: 4px 13px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: clamp(10px, 2vw, 13px);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            pointer-events: none;
+            z-index: 5;
+            box-shadow: 0 2px 8px #000a;
+            transition: opacity .3s;
+        }
+
+        .badge-live.dim {
+            opacity: .4;
+        }
+
+        .badge-dvr {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            background: rgba(0, 0, 0, .75);
+            border: 1px solid var(--red);
+            padding: 4px 13px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: clamp(10px, 2vw, 13px);
+            display: none;
+            align-items: center;
+            gap: 6px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .badge-dvr.show {
+            display: flex;
+        }
+
+        .idle-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(12, 30, 60, .92);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            z-index: 6;
+            transition: opacity .3s;
+        }
+
+        .idle-overlay.gone {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .idle-overlay i {
+            font-size: 52px;
+            color: var(--n3);
+        }
+
+        .idle-overlay p {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--grey);
+        }
+
+        .flash {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .flash i {
+            font-size: clamp(40px, 8vw, 68px);
+            color: #fff;
+            text-shadow: 0 0 40px #000;
+            opacity: 0;
+        }
+
+        .flash i.pop {
+            animation: pfade .5s forwards;
+        }
+
+        @keyframes pfade {
+            0% { opacity: .9; transform: scale(.8) }
+            100% { opacity: 0; transform: scale(1.3) }
+        }
+
+        .tl-wrap {
+            background: var(--navy);
+            padding: 10px 20px 6px;
+            border-top: 1px solid var(--n3);
+        }
+
+        .tl-bar {
+            position: relative;
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .18);
+            cursor: pointer;
+            transition: height .15s;
+        }
+
+        .tl-bar:hover,
+        .tl-bar.drag {
+            height: 6px;
+        }
+
+        .tl-bar:hover .tl-thumb,
+        .tl-bar.drag .tl-thumb {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .tl-prog {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: var(--red);
+            border-radius: 999px;
+            pointer-events: none;
+            width: 0%;
+        }
+
+        .tl-thumb {
+            position: absolute;
+            top: 50%;
+            width: 14px;
+            height: 14px;
+            background: var(--red);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            pointer-events: none;
+            transition: transform .15s;
+            box-shadow: 0 0 4px #0008;
+        }
+
+        .tl-tip {
+            position: absolute;
+            bottom: calc(100% + 10px);
+            background: rgba(0, 0, 0, .85);
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            transform: translateX(-50%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .1s;
+        }
+
+        .tl-bar:hover .tl-tip,
+        .tl-bar.drag .tl-tip {
+            opacity: 1;
+        }
+
+        .tl-lbl {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--grey);
+            margin-top: 6px;
+        }
+
+        .live-jump {
+            color: var(--red);
+            cursor: pointer;
+            font-weight: 700;
+            background: none;
+            border: none;
+            font-family: inherit;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            transition: opacity .2s;
+        }
+
+        .live-jump.at-live {
+            color: var(--grey);
+            cursor: default;
+        }
+
+        .ctrl {
+            background: var(--n2);
+            border-top: 2px solid var(--red);
+            padding: 14px 20px;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .row:last-child {
+            margin-bottom: 0;
+        }
+
+        button {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 700;
+            font-size: clamp(12px, 2.5vw, 15px);
+            padding: 6px 16px;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            background: var(--n3);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            transition: background .12s, opacity .12s, transform .08s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button i {
+            font-size: clamp(10px, 2vw, 13px);
+        }
+
+        button:active:not(:disabled) {
+            transform: scale(.95);
+        }
+
+        button:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+        }
+
+        button.red {
+            background: var(--red);
+        }
+
+        button.gold {
+            background: var(--gold);
+            color: var(--navy);
+        }
+
+        button.spd-on {
+            background: var(--red) !important;
+        }
+
+        .spd-grp {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            background: var(--navy);
+            padding: 5px 14px;
+            border-radius: 999px;
+        }
+
+        .spd-lbl {
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .bot {
+            background: var(--bg);
+            color: var(--navy);
+            padding: 14px 20px;
+        }
+
+        .set-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .set-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .cg {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff;
+            padding: 5px 14px;
+            border-radius: 999px;
+            flex-wrap: wrap;
+            position: relative;
+        }
+
+        .cg-lbl {
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        select,
+        input[type=range] {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            border: 1px solid var(--n3);
+            border-radius: 999px;
+            padding: 3px 8px;
+            background: #fff;
+            color: var(--navy);
+        }
+
+        .ii {
+            width: 17px;
+            height: 17px;
+            background: var(--n3);
+            color: #fff;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: help;
+            position: relative;
+        }
+
+        .ii::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--navy);
+            color: #fff;
+            padding: 5px 9px;
+            border-radius: 8px;
+            font-size: 11px;
+            white-space: normal;
+            width: 200px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .15s;
+            z-index: 50;
+        }
+
+        .ii:hover::after {
+            opacity: 1;
+        }
+
+        .ok {
+            color: #2e7d32;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .nok {
+            color: var(--red);
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .warn {
+            background: #ffe5b4;
+            color: #b45f06;
+            padding: 3px 10px;
+            border-radius: 999px;
+            display: none;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .warn.on {
+            display: inline-flex;
+        }
+
+        .stats {
+            background: #e9edf2;
+            border-radius: 999px;
+            padding: 7px 14px;
+            font-size: clamp(11px, 2vw, 13px);
+            font-weight: 600;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            color: var(--navy);
+        }
+
+        .hint {
+            background: #e9edf2;
+            border-radius: 999px;
+            padding: 6px 14px;
+            margin-top: 8px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--n3);
+        }
+
+        .toast {
+            position: fixed;
+            top: 68px;
+            right: 16px;
+            z-index: 999;
+            background: var(--n3);
+            color: #fff;
+            padding: 9px 18px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px #0008;
+            animation: tFade 3.5s forwards;
+            pointer-events: none;
+        }
+
+        .toast.err {
+            background: var(--red);
+        }
+
+        @keyframes tFade {
+            0% { opacity: 1; transform: translateY(0) }
+            80% { opacity: 1 }
+            100% { opacity: 0; transform: translateY(-8px) }
+        }
+
+        /* ── ONBOARDING ── */
+        #onboarding {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        #onboarding .ob-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(8, 16, 32, .92);
+            backdrop-filter: blur(4px);
+        }
+
+        .ob-modal {
+            position: relative;
+            background: var(--navy);
+            border: 2px solid var(--n3);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 560px;
+            overflow: hidden;
+            box-shadow: 0 24px 60px #000c;
+        }
+
+        .ob-header {
+            background: var(--red);
+            padding: 20px 24px 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .ob-header .ob-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, .15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .ob-header h2 {
+            font-size: clamp(18px, 4vw, 22px);
+            font-weight: 900;
+            line-height: 1.1;
+        }
+
+        .ob-header p {
+            font-size: 13px;
+            font-weight: 600;
+            opacity: .85;
+            margin-top: 3px;
+        }
+
+        .ob-dots {
+            display: flex;
+            gap: 6px;
+            padding: 16px 24px 0;
+            justify-content: center;
+        }
+
+        .ob-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--n3);
+            transition: background .2s, width .2s;
+            cursor: pointer;
+        }
+
+        .ob-dot.active {
+            background: var(--red);
+            width: 22px;
+            border-radius: 999px;
+        }
+
+        .ob-steps {
+            overflow: hidden;
+        }
+
+        .ob-track {
+            display: flex;
+            transition: transform .4s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        .ob-step {
+            min-width: 100%;
+            padding: 20px 24px;
+        }
+
+        .ob-step h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ob-step h3 i {
+            color: var(--gold);
+        }
+
+        .ob-step ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ob-step ul li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .ob-step ul li i {
+            color: var(--red);
+            margin-top: 1px;
+            width: 16px;
+            flex-shrink: 0;
+        }
+
+        .ob-step ul li span {
+            color: rgba(255, 255, 255, .8);
+        }
+
+        .ob-step ul li strong {
+            color: #fff;
+        }
+
+        .perm-box {
+            margin-top: 14px;
+            background: var(--n2);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .perm-box i.big {
+            font-size: 36px;
+            color: var(--grey);
+        }
+
+        .perm-box p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, .7);
+            font-weight: 600;
+            max-width: 340px;
+        }
+
+        #btnGrantPerm {
+            background: var(--gold);
+            color: var(--navy);
+            font-size: 15px;
+            padding: 8px 22px;
+            border-radius: 999px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: opacity .15s;
+        }
+
+        #btnGrantPerm:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .perm-status {
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 20px;
+        }
+
+        .perm-status.ok {
+            color: #4caf50;
+        }
+
+        .perm-status.err {
+            color: var(--red);
+        }
+
+        .ob-footer {
+            padding: 14px 24px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border-top: 1px solid var(--n3);
+        }
+
+        .ob-footer button {
+            font-size: 14px;
+        }
+
+        #btnObNext {
+            background: var(--red);
+        }
+
+        #btnObNext:disabled {
+            opacity: .4;
+        }
+
+        #btnObSkip {
+            background: none;
+            color: var(--grey);
+            font-size: 13px;
+            padding: 4px 0;
+            text-decoration: underline;
+        }
+
+        #btnObSkip:hover {
+            color: #fff;
+        }
+
+        /* ── DIALOG ── */
+        .dialog-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(8, 16, 32, .85);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .dialog-box {
+            background: var(--n2);
+            border: 2px solid var(--n3);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 16px 48px #000c;
+        }
+
+        .dialog-box h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .dialog-box p {
+            font-size: 14px;
+            color: rgba(255,255,255,.8);
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .dialog-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .dialog-buttons button {
+            font-size: 14px;
+            padding: 8px 20px;
+        }
+
+        /* ── DELAY CANVAS ── */
+        #delayCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #000;
+            display: none;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media(max-width:640px) {
+            .hdr {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 8px 12px;
+                gap: 6px;
+            }
+
+            .hdr-l,
+            .hdr-r {
+                justify-content: center;
+            }
+
+            .set-row {
+                flex-direction: column;
+            }
+
+            .cg {
+                width: 100%;
+            }
+
+            .row {
+                gap: 6px;
+            }
+
+            button {
+                padding: 5px 10px;
+            }
+
+            .spd-grp {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ONBOARDING -->
+    <div id="onboarding">
+        <div class="ob-backdrop"></div>
+        <div class="ob-modal">
+            <div class="ob-header">
+                <div class="ob-icon"><i class="fas fa-video"></i></div>
+                <div>
+                    <h2>Sistema de Replay FEJAMA</h2>
+                    <p>Arbitragem de Judô com DVR em tempo real</p>
+                </div>
+            </div>
+
+            <div class="ob-dots" id="obDots">
+                <div class="ob-dot active" data-i="0"></div>
+                <div class="ob-dot" data-i="1"></div>
+                <div class="ob-dot" data-i="2"></div>
+                <div class="ob-dot" data-i="3"></div>
+            </div>
+
+            <div class="ob-steps">
+                <div class="ob-track" id="obTrack">
+                    <div class="ob-step">
+                        <h3><i class="fas fa-star"></i> Bem-vindo ao TatamiCam</h3>
+                        <ul>
+                            <li><i class="fas fa-circle-play"></i><span><strong>Gravação contínua</strong> com buffer circular (até 30 min).</span></li>
+                            <li><i class="fas fa-clock-rotate-left"></i><span><strong>Replay instantâneo</strong> arrastando a barra vermelha – igual ao YouTube – sem parar a gravação.</span></li>
+                            <li><i class="fas fa-gauge-high"></i><span><strong>Velocidade ajustável:</strong> 0.25×, 0.5×, 1× ou 2×.</span></li>
+                            <li><i class="fas fa-hourglass-start"></i><span><strong>Delay ao vivo configurável</strong> (0–10s) para revisão imediata.</span></li>
+                            <li><i class="fas fa-floppy-disk"></i><span><strong>Salvamento automático</strong> em pasta escolhida.</span></li>
+                        </ul>
+                    </div>
+                    <div class="ob-step">
+                        <h3><i class="fas fa-camera"></i> Permissão de câmera</h3>
+                        <p style="font-size:13px;color:rgba(255,255,255,.75);font-weight:600;margin-bottom:4px;">Para listar e usar suas câmeras, o navegador precisa de permissão <strong>uma única vez</strong>. Após concedida, ela vale para todas as funções do sistema.</p>
+                        <div class="perm-box">
+                            <i class="fas fa-camera big" id="permIcon"></i>
+                            <p id="permDesc">Clique no botão abaixo e permita o acesso à câmera quando o navegador perguntar.</p>
+                            <button id="btnGrantPerm"><i class="fas fa-unlock"></i> Permitir câmera</button>
+                            <div class="perm-status" id="permStatus"></div>
+                        </div>
+                    </div>
+                    <div class="ob-step">
+                        <h3><i class="fas fa-hand-pointer"></i> Como usar na arbitragem</h3>
+                        <ul>
+                            <li><i class="fas fa-1"></i><span>Escolha a câmera e o <strong>delay</strong> desejado (0 = ao vivo).</span></li>
+                            <li><i class="fas fa-2"></i><span>Clique em <strong>INICIAR</strong>. Com delay > 0, a imagem aparecerá atrasada.</span></li>
+                            <li><i class="fas fa-3"></i><span>Para revisar um lance, arraste a <strong>barra vermelha</strong> ou use os botões <strong>-5s / +5s</strong> (sempre disponíveis).</span></li>
+                            <li><i class="fas fa-4"></i><span>A live continua gravando em segundo plano. Clique <strong>AO VIVO</strong> para retornar.</span></li>
+                            <li><i class="fas fa-5"></i><span>Para salvar, clique em <strong>SALVAR</strong> a qualquer momento (não precisa estar no modo DVR).</span></li>
+                        </ul>
+                    </div>
+                    <div class="ob-step">
+                        <h3><i class="fas fa-lightbulb"></i> Dicas e segurança</h3>
+                        <ul>
+                            <li><i class="fas fa-shield-haltered"></i><span>Ao clicar em <strong>PARAR</strong> ou <strong>DESLIGAR</strong>, o sistema perguntará se deseja salvar o buffer antes de interromper.</span></li>
+                            <li><i class="fas fa-memory"></i><span>Para computadores com pouca RAM, mantenha o buffer em <strong>3–5 min</strong> e resolução HD.</span></li>
+                            <li><i class="fas fa-rotate"></i><span>Use o botão <i class="fas fa-rotate" style="font-size:11px"></i> ao lado da câmera para atualizar a lista se conectar uma nova câmera.</span></li>
+                            <li><i class="fas fa-circle-question"></i><span>O botão <strong>?</strong> no cabeçalho reabre este guia a qualquer momento.</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ob-footer">
+                <button id="btnObBack" style="background:var(--n3);" disabled><i class="fas fa-chevron-left"></i> Voltar</button>
+                <button id="btnObSkip">Pular tutorial</button>
+                <button id="btnObNext" class="red">Próximo <i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP -->
+    <header class="hdr">
+        <div class="hdr-l">
+            <img class="logo-img" src="Manual da Marca FEJAMA 2026.png" alt="FEJAMA"
+                onerror="this.style.display='none';document.getElementById('logoPh').style.display='flex'">
+            <div id="logoPh" class="logo-ph" style="display:none">FEJ</div>
+            <div class="logo-txt">
+                <div class="logo-main">FEJAMA</div>
+                <div class="logo-sub">Federação de Judô do Amazonas</div>
+            </div>
+        </div>
+        <div class="hdr-r">
+            <button class="btn-help" id="btnHelp"><i class="fas fa-circle-question"></i> Ajuda</button>
+            <div class="pill" id="statusPill"><i class="fas fa-circle-dot"></i> INATIVO</div>
+        </div>
+    </header>
+
+    <!-- VIDEO -->
+    <div class="stage">
+        <div class="stage-box" id="stageBox">
+            <div class="v-wrap" id="liveWrap">
+                <video id="liveVid" autoplay muted playsinline></video>
+                <canvas id="delayCanvas"></canvas>
+            </div>
+            <div class="v-wrap hidden" id="replayWrap">
+                <video id="replayVid" playsinline preload="auto"></video>
+            </div>
+            <div class="badge-live" id="bLive"><span class="dot"></span> AO VIVO</div>
+            <div class="badge-dvr" id="bDvr"><i class="fas fa-clock-rotate-left"></i> DVR</div>
+            <div class="idle-overlay" id="idleOv">
+                <i class="fas fa-video-slash"></i>
+                <p>Câmera inativa — clique em INICIAR</p>
+            </div>
+            <div class="flash" id="flash"><i class="fas fa-play" id="flashIco"></i></div>
+        </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="tl-wrap">
+        <div class="tl-bar" id="tlBar">
+            <div class="tl-prog" id="tlProg"></div>
+            <div class="tl-thumb" id="tlThumb" style="left:0%"></div>
+            <div class="tl-tip" id="tlTip">0:00</div>
+        </div>
+        <div class="tl-lbl">
+            <span id="tlCur">0:00</span>
+            <button class="live-jump at-live" id="tlLive"><span class="dot" style="background:var(--red)"></span> AO VIVO</button>
+            <span id="tlTot">0:00</span>
+        </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="ctrl">
+        <div class="row">
+            <button id="btnStart" class="red"><i class="fas fa-play"></i> INICIAR</button>
+            <button id="btnStop" disabled><i class="fas fa-stop"></i> PARAR</button>
+            <button id="btnDesligar" style="display:none;" title="Desligar câmera completamente"><i class="fas fa-power-off"></i> DESLIGAR</button>
+            <button id="btnPP" disabled><i class="fas fa-play"></i> PLAY</button>
+            <button id="btnB5"><i class="fas fa-backward-step"></i> -5s</button>
+            <button id="btnF5"><i class="fas fa-forward-step"></i> +5s</button>
+            <button id="btnSave" class="gold"><i class="fas fa-floppy-disk"></i> SALVAR</button>
+        </div>
+        <div class="row">
+            <div class="spd-grp">
+                <span class="spd-lbl"><i class="fas fa-gauge-high"></i> VEL.</span>
+                <button id="s025">0.25×</button>
+                <button id="s05">0.5×</button>
+                <button id="s1">1×</button>
+                <button id="s2">2×</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="bot">
+        <div class="set-row">
+            <div class="cg">
+                <span class="cg-lbl"><i class="fas fa-camera"></i> Câmera</span>
+                <select id="camSel"><option value="">-- aguardando permissão --</option></select>
+                <button id="btnRefresh" style="padding:4px 10px;font-size:11px;" title="Atualizar câmeras"><i class="fas fa-rotate"></i></button>
+            </div>
+            <div class="cg">
+                <span class="cg-lbl"><i class="fas fa-clock"></i> Buffer máx.</span>
+                <input type="range" id="bufSlider" min="1" max="30" step="1" value="5" style="width:90px">
+                <span id="bufLbl">5 min</span>
+                <span class="ii" data-tip="Tempo máximo de vídeo mantido em memória para replay.">i</span>
+            </div>
+            <div class="cg">
+                <span class="cg-lbl"><i class="fas fa-hourglass-start"></i> Delay</span>
+                <input type="range" id="delaySlider" min="0" max="10" step="1" value="0" style="width:90px">
+                <span id="delayLbl">0s</span>
+                <span class="ii" data-tip="Tempo de atraso da imagem ao vivo. Útil para arbitragem.">i</span>
+            </div>
+            <div class="cg">
+                <span class="cg-lbl"><i class="fas fa-folder-open"></i> Pasta de salvamento</span>
+                <button id="btnChooseFolder" style="padding:4px 10px;font-size:11px;" title="Escolher pasta padrão para salvar replays automaticamente"><i class="fas fa-folder-plus"></i> Escolher</button>
+                <button id="btnClearFolder" style="padding:4px 10px;font-size:11px;" title="Remover pasta padrão"><i class="fas fa-times"></i> Limpar</button>
+                <span id="folderPath" style="font-size:11px;color:var(--navy);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+            </div>
+        </div>
+        <div class="set-row">
+            <div class="cg">
+                <span class="cg-lbl"><i class="fas fa-expand"></i> Resolução</span>
+                <select id="resSel">
+                    <option value="640x480">640×480 (SD)</option>
+                    <option value="1280x720" selected>1280×720 (HD)</option>
+                    <option value="1920x1080">1920×1080 (Full HD)</option>
+                    <option value="original">Original da câmera</option>
+                </select>
+                <span id="resOk" class="ok"><i class="fas fa-check-circle"></i> OK</span>
+            </div>
+            <div class="cg">
+                <span class="cg-lbl"><i class="fas fa-film"></i> FPS</span>
+                <select id="fpsSel">
+                    <option value="15">15 fps</option>
+                    <option value="24">24 fps</option>
+                    <option value="30">30 fps</option>
+                    <option value="60">60 fps</option>
+                    <option value="auto" selected>Câmera padrão</option>
+                </select>
+                <span id="fpsOk" class="ok"><i class="fas fa-check-circle"></i> OK</span>
+                <span class="ii" data-tip="Mais FPS = imagem mais suave, arquivo maior.">i</span>
+            </div>
+            <div class="cg">
+                <span class="cg-lbl"><i class="fas fa-database"></i> Estimativa</span>
+                <span id="sizeEst">-- MB</span>
+                <span class="warn" id="ramWarn"><i class="fas fa-triangle-exclamation"></i> RAM</span>
+            </div>
+        </div>
+
+        <div class="stats" id="statsBar">
+            <span><i class="fas fa-chart-line"></i> FPS: --</span><span>|</span>
+            <span><i class="fas fa-expand"></i> Res: --</span><span>|</span>
+            <span><i class="fas fa-database"></i> Buffer: 0 MB</span><span>|</span>
+            <span><i class="fas fa-hourglass"></i> Gravado: 0s</span><span>|</span>
+            <span><i class="fas fa-microchip"></i> RAM: --</span>
+        </div>
+        <div class="hint">
+            <i class="fas fa-circle-info"></i>
+            <strong>DVR como o YouTube:</strong> arraste a barra para voltar no tempo. A live continua em segundo plano.
+        </div>
+    </div>
+
+    <script>
+        'use strict';
+        (function () {
+            // ── DOM ───────────────────────────────────────────────────────────
+            const liveVid = document.getElementById('liveVid');
+            const replayVid = document.getElementById('replayVid');
+            const liveWrap = document.getElementById('liveWrap');
+            const replayWrap = document.getElementById('replayWrap');
+            const statusPill = document.getElementById('statusPill');
+            const bLive = document.getElementById('bLive');
+            const bDvr = document.getElementById('bDvr');
+            const idleOv = document.getElementById('idleOv');
+            const flashIco = document.getElementById('flashIco');
+            const tlBar = document.getElementById('tlBar');
+            const tlProg = document.getElementById('tlProg');
+            const tlThumb = document.getElementById('tlThumb');
+            const tlTip = document.getElementById('tlTip');
+            const tlCur = document.getElementById('tlCur');
+            const tlTot = document.getElementById('tlTot');
+            const tlLive = document.getElementById('tlLive');
+            const btnStart = document.getElementById('btnStart');
+            const btnStop = document.getElementById('btnStop');
+            const btnDesligar = document.getElementById('btnDesligar');
+            const btnPP = document.getElementById('btnPP');
+            const btnB5 = document.getElementById('btnB5');
+            const btnF5 = document.getElementById('btnF5');
+            const btnSave = document.getElementById('btnSave');
+            const s025 = document.getElementById('s025');
+            const s05 = document.getElementById('s05');
+            const s1 = document.getElementById('s1');
+            const s2 = document.getElementById('s2');
+            const camSel = document.getElementById('camSel');
+            const btnRefresh = document.getElementById('btnRefresh');
+            const bufSlider = document.getElementById('bufSlider');
+            const bufLbl = document.getElementById('bufLbl');
+            const delaySlider = document.getElementById('delaySlider');
+            const delayLbl = document.getElementById('delayLbl');
+            const resSel = document.getElementById('resSel');
+            const fpsSel = document.getElementById('fpsSel');
+            const sizeEst = document.getElementById('sizeEst');
+            const ramWarn = document.getElementById('ramWarn');
+            const statsBar = document.getElementById('statsBar');
+            const resOk = document.getElementById('resOk');
+            const fpsOk = document.getElementById('fpsOk');
+            const btnChooseFolder = document.getElementById('btnChooseFolder');
+            const btnClearFolder = document.getElementById('btnClearFolder');
+            const folderPath = document.getElementById('folderPath');
+            const delayCanvas = document.getElementById('delayCanvas');
+            const ob = document.getElementById('onboarding');
+            const obTrack = document.getElementById('obTrack');
+            const obDots = document.querySelectorAll('.ob-dot');
+            const btnObBack = document.getElementById('btnObBack');
+            const btnObNext = document.getElementById('btnObNext');
+            const btnObSkip = document.getElementById('btnObSkip');
+            const btnGrant = document.getElementById('btnGrantPerm');
+            const permIcon = document.getElementById('permIcon');
+            const permDesc = document.getElementById('permDesc');
+            const permStat = document.getElementById('permStatus');
+            const TOTAL_OB_STEPS = 4;
+            let obStep = 0;
+
+            // ── State ─────────────────────────────────────────────────────────
+            let stream = null;
+            let recorder = null;
+            let chunks = [];
+            let bufSec = 0;
+            let bufBytes = 0;
+            let maxBufSec = 5 * 60;
+            let camCfg = { w: 1280, h: 720, fps: 30 };
+            let mode = 'idle';   // 'idle' | 'live' | 'dvr'
+            let replayUrl = null;
+            let wasPlaying = true;
+            let isDrag = false;
+            let permGranted = false;
+            let statsIval = null;
+            let fpsCount = 0;
+            let restarting = false;
+            let cameraOn = false;
+            let delaySeconds = 0;
+            let frameDelayer = null;
+
+            // ── UTILS ─────────────────────────────────────────────────────────
+            function toast(msg, err = false) {
+                const el = document.createElement('div');
+                el.className = 'toast' + (err ? ' err' : '');
+                el.innerHTML = `<i class="fas fa-circle-info"></i> ${msg}`;
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 3600);
+            }
+
+            function fmt(s) {
+                if (!isFinite(s) || s < 0) s = 0;
+                return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+            }
+
+            function showFlash(play) {
+                flashIco.className = play ? 'fas fa-play' : 'fas fa-pause';
+                flashIco.classList.remove('pop');
+                void flashIco.offsetWidth;
+                flashIco.classList.add('pop');
+            }
+
+            function showConfirm({ title, message, buttons, onClose }) {
+                const overlay = document.createElement('div');
+                overlay.className = 'dialog-overlay';
+                overlay.innerHTML = `
+                    <div class="dialog-box">
+                        <h3>${title}</h3>
+                        <p>${message}</p>
+                        <div class="dialog-buttons"></div>
+                    </div>
+                `;
+                const btnContainer = overlay.querySelector('.dialog-buttons');
+                buttons.forEach(btn => {
+                    const b = document.createElement('button');
+                    b.className = btn.class || '';
+                    b.innerHTML = btn.label;
+                    b.addEventListener('click', () => {
+                        if (btn.callback) btn.callback();
+                        close();
+                    });
+                    btnContainer.appendChild(b);
+                });
+                const close = () => {
+                    overlay.remove();
+                    if (onClose) onClose();
+                };
+                document.body.appendChild(overlay);
+            }
+
+            function isTauri() {
+                return typeof window !== 'undefined' && window.__TAURI__ !== undefined;
+            }
+
+            // ── PERMISSION ────────────────────────────────────────────────────
+            let _permPromise = null;
+            async function requestPermission() {
+                if (permGranted) return true;
+                if (_permPromise) return _permPromise;
+                _permPromise = (async () => {
+                    try {
+                        const tmp = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                        tmp.getTracks().forEach(t => t.stop());
+                        permGranted = true;
+                        return true;
+                    } catch (_) {
+                        return false;
+                    } finally {
+                        _permPromise = null;
+                    }
+                })();
+                return _permPromise;
+            }
+
+            async function populateCams() {
+                try {
+                    const devs = await navigator.mediaDevices.enumerateDevices();
+                    const vids = devs.filter(d => d.kind === 'videoinput');
+                    if (!vids.length) {
+                        camSel.innerHTML = '<option value="">Nenhuma câmera detectada</option>';
+                        return;
+                    }
+                    const cur = stream?.getVideoTracks()[0]?.getSettings().deviceId;
+                    const prev = camSel.value;
+                    camSel.innerHTML = '';
+                    vids.forEach((d, i) => {
+                        const o = document.createElement('option');
+                        o.value = d.deviceId;
+                        o.textContent = d.label || `Câmera ${i + 1}`;
+                        if ((cur && d.deviceId === cur) || (!cur && d.deviceId === prev)) o.selected = true;
+                        camSel.appendChild(o);
+                    });
+                } catch (_) { }
+            }
+
+            async function openCamera(deviceId, res, fps) {
+                if (!permGranted) {
+                    const ok = await requestPermission();
+                    if (!ok) throw new Error('Permissão de câmera negada. Verifique as configurações do navegador.');
+                    await populateCams();
+                }
+                let wC, hC;
+                if (!res || res === 'original') { wC = { ideal: 1920 }; hC = { ideal: 1080 }; }
+                else {
+                    const [w, h] = res.split('x').map(Number);
+                    wC = { ideal: w }; hC = { ideal: h };
+                }
+                const fpsC = (!fps || fps === 'auto') ? { ideal: 30 } : { ideal: parseInt(fps, 10) };
+                const vidCon = { width: wC, height: hC, frameRate: fpsC };
+                if (deviceId) vidCon.deviceId = { exact: deviceId };
+                try { const s = await navigator.mediaDevices.getUserMedia({ video: vidCon, audio: false }); applySettings(s, res, fps); return s; } catch (_) {}
+                try { const s = await navigator.mediaDevices.getUserMedia({ video: deviceId ? { deviceId: { exact: deviceId } } : true, audio: false }); applySettings(s, res, fps); toast(`Câmera em modo padrão (${camCfg.w}×${camCfg.h})`); return s; } catch (_) {}
+                try { const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); applySettings(s, res, fps); toast('Usando câmera padrão do sistema'); return s; }
+                catch (e3) { throw new Error('Câmera inacessível: ' + e3.message); }
+            }
+
+            function applySettings(s, res, fps) {
+                const t = s.getVideoTracks()[0];
+                const cfg = t.getSettings();
+                camCfg = {
+                    w: cfg.width || (res === 'original' ? 1280 : parseInt((res || '1280x720').split('x')[0], 10)),
+                    h: cfg.height || (res === 'original' ? 720 : parseInt((res || '1280x720').split('x')[1], 10)),
+                    fps: cfg.frameRate || (fps === 'auto' ? 30 : parseInt(fps || '30', 10))
+                };
+                if (t.getCapabilities) {
+                    const cap = t.getCapabilities();
+                    if (cap.width) {
+                        const [sw, sh] = res === 'original' ? [9999, 9999] : (res || '1280x720').split('x').map(Number);
+                        const ok = res === 'original' || (sw <= cap.width.max && sh <= cap.height.max);
+                        resOk.className = ok ? 'ok' : 'nok';
+                        resOk.innerHTML = ok ? '<i class="fas fa-check-circle"></i> OK' : '<i class="fas fa-times-circle"></i> N/A';
+                    }
+                    if (cap.frameRate) {
+                        const fv = fps === 'auto' ? 9999 : parseInt(fps || '30', 10);
+                        const ok = fps === 'auto' || fv <= cap.frameRate.max;
+                        fpsOk.className = ok ? 'ok' : 'nok';
+                        fpsOk.innerHTML = ok ? '<i class="fas fa-check-circle"></i> OK' : '<i class="fas fa-times-circle"></i> N/A';
+                    }
+                }
+            }
+
+            // ── RECORDER ──────────────────────────────────────────────────────
+            function startRecorder(s) {
+                if (recorder && recorder.state !== 'inactive') recorder.stop();
+                let mime = 'video/webm;codecs=vp9';
+                if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+                recorder = new MediaRecorder(s, { mimeType: mime, videoBitsPerSecond: 2_000_000 });
+                recorder.ondataavailable = e => { if (e.data && e.data.size > 0) pushChunk(e.data); };
+                recorder.start(1000);
+            }
+
+            function stopRecorder() {
+                if (recorder && recorder.state !== 'inactive') { try { recorder.stop(); } catch (_) {} }
+                recorder = null;
+            }
+
+            function pushChunk(blob) {
+                chunks.push(blob);
+                bufSec += 1;
+                bufBytes += blob.size;
+                while (bufSec > maxBufSec && chunks.length > 1) {
+                    const o = chunks.shift();
+                    bufSec -= 1;
+                    bufBytes -= o.size;
+                }
+                updateEst();
+            }
+
+            function clearBuffer() {
+                chunks = [];
+                bufSec = 0;
+                bufBytes = 0;
+                if (replayUrl) { URL.revokeObjectURL(replayUrl); replayUrl = null; }
+                updateEst();
+            }
+
+            function buildUrl() {
+                if (!chunks.length) return null;
+                if (replayUrl) URL.revokeObjectURL(replayUrl);
+                replayUrl = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' }));
+                return replayUrl;
+            }
+
+            function updateEst() {
+                const { w, h, fps } = camCfg;
+                if (!w || !h || !fps || bufSec === 0) {
+                    sizeEst.textContent = '-- MB';
+                    ramWarn.style.display = 'none';
+                    return;
+                }
+                const mb = bufBytes > 0 ? (bufBytes / 1_048_576).toFixed(1) : (2 * bufSec / 8).toFixed(1);
+                const min = (bufSec / 60).toFixed(1);
+                sizeEst.textContent = `${mb} MB (${min} min)`;
+                const mbNum = parseFloat(mb);
+                const big = mbNum > 800;
+                const hiRam = performance.memory ? mbNum > (performance.memory.jsHeapSizeLimit / 1_048_576) * 0.7 : false;
+                if (big || hiRam) {
+                    ramWarn.style.display = 'inline-flex';
+                    ramWarn.innerHTML = big ? '<i class="fas fa-triangle-exclamation"></i> &gt;800 MB' : '<i class="fas fa-triangle-exclamation"></i> RAM alta';
+                } else {
+                    ramWarn.style.display = 'none';
+                }
+            }
+
+            // ── MODE HELPERS ──────────────────────────────────────────────────
+            function goLive() {
+                mode = 'live';
+                liveWrap.classList.remove('hidden');
+                replayWrap.classList.add('hidden');
+                replayVid.pause();
+                idleOv.classList.add('gone');
+                statusPill.innerHTML = '<span class="dot"></span> AO VIVO';
+                statusPill.classList.add('live');
+                bLive.classList.remove('dim');
+                bDvr.classList.remove('show');
+                tlLive.classList.add('at-live');
+                btnPP.disabled = false;
+                updatePP();
+                btnDesligar.style.display = cameraOn ? 'inline-flex' : 'none';
+                // Keep all DVR buttons always enabled (handled by logic, not disabled)
+            }
+
+            function goDVR(seekSec) {
+                if (bufSec === 0) { toast('Nenhum vídeo gravado ainda.'); return; }
+                const url = buildUrl();
+                if (!url) return;
+                mode = 'dvr';
+                statusPill.innerHTML = '<i class="fas fa-clock-rotate-left"></i> DVR';
+                statusPill.classList.remove('live');
+                bLive.classList.add('dim');
+                bDvr.classList.add('show');
+                tlLive.classList.remove('at-live');
+                replayWrap.classList.remove('hidden');
+                liveWrap.classList.add('hidden');
+                replayVid.src = url;
+                replayVid.load();
+                const target = Math.min(Math.max(seekSec || 0, 0), bufSec);
+                const go = () => {
+                    replayVid.currentTime = target;
+                    if (wasPlaying) replayVid.play().catch(() => {});
+                    updatePP();
+                    refreshTL();
+                };
+                if (replayVid.readyState >= 1) go();
+                else replayVid.addEventListener('loadedmetadata', go, { once: true });
+                btnDesligar.style.display = 'none';
+            }
+
+            function togglePP() {
+                if (mode === 'live') {
+                    if (liveVid.paused) { liveVid.play().catch(() => {}); showFlash(true); }
+                    else { liveVid.pause(); showFlash(false); }
+                } else if (mode === 'dvr') {
+                    if (replayVid.paused) { replayVid.play().catch(() => {}); showFlash(true); }
+                    else { replayVid.pause(); showFlash(false); }
+                }
+                updatePP();
+            }
+
+            function updatePP() {
+                if (mode === 'idle') { btnPP.innerHTML = '<i class="fas fa-play"></i> PLAY'; btnPP.disabled = true; return; }
+                btnPP.disabled = false;
+                const paused = mode === 'dvr' ? replayVid.paused : liveVid.paused;
+                btnPP.innerHTML = paused ? '<i class="fas fa-play"></i> PLAY' : '<i class="fas fa-pause"></i> PAUSE';
+            }
+
+            function setSpeed(rate) {
+                if (mode !== 'dvr') { toast('Disponível apenas no modo DVR'); return; }
+                replayVid.playbackRate = rate;
+                refreshSpeedButtons();
+            }
+
+            function refreshSpeedButtons() {
+                const r = replayVid.playbackRate;
+                [[s025, 0.25], [s05, 0.5], [s1, 1], [s2, 2]].forEach(([b, v]) => b.classList.toggle('spd-on', r === v));
+            }
+
+            function seekOffset(delta) {
+                if (mode !== 'dvr' || !isFinite(replayVid.duration)) return;
+                replayVid.currentTime = Math.min(Math.max(replayVid.currentTime + delta, 0), replayVid.duration);
+                refreshTL();
+            }
+
+            // ── TIMELINE ──────────────────────────────────────────────────────
+            function refreshTL() {
+                const cur = mode === 'dvr' ? (isFinite(replayVid.currentTime) ? replayVid.currentTime : 0) : bufSec;
+                const tot = bufSec;
+                const pct = tot > 0 ? (cur / tot) * 100 : 0;
+                tlProg.style.width = pct + '%';
+                tlThumb.style.left = pct + '%';
+                if (!isDrag) {
+                    tlCur.textContent = fmt(cur);
+                    tlTot.textContent = fmt(tot);
+                }
+                tlLive.classList.toggle('at-live', mode === 'live' || cur >= tot - 0.5);
+            }
+
+            function resetTimeline() {
+                tlProg.style.width = '0%';
+                tlThumb.style.left = '0%';
+                tlCur.textContent = '0:00';
+                tlTot.textContent = '0:00';
+                tlLive.classList.add('at-live');
+            }
+
+            function pctFromEvent(e) {
+                const r = tlBar.getBoundingClientRect();
+                const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+                return Math.min(Math.max(x / r.width, 0), 1);
+            }
+
+            function applyDragVisual(pct) {
+                const s = pct * bufSec;
+                tlProg.style.width = pct * 100 + '%';
+                tlThumb.style.left = pct * 100 + '%';
+                tlTip.style.left = pct * 100 + '%';
+                tlTip.textContent = fmt(s);
+                tlCur.textContent = fmt(s);
+            }
+
+            tlBar.addEventListener('mousemove', e => {
+                const r = tlBar.getBoundingClientRect();
+                const pct = Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1);
+                tlTip.style.left = pct * 100 + '%';
+                tlTip.textContent = fmt(pct * bufSec);
+            });
+
+            function startDrag(e) {
+                if (mode === 'idle') return;
+                isDrag = true;
+                tlBar.classList.add('drag');
+                wasPlaying = mode === 'dvr' ? !replayVid.paused : !liveVid.paused;
+                if (mode === 'dvr' && !replayVid.paused) replayVid.pause();
+                applyDragVisual(pctFromEvent(e));
+                window.addEventListener('mousemove', onDrag);
+                window.addEventListener('touchmove', onDrag, { passive: true });
+                window.addEventListener('mouseup', endDrag);
+                window.addEventListener('touchend', endDrag);
+            }
+
+            function onDrag(e) { if (isDrag) applyDragVisual(pctFromEvent(e)); }
+
+            function endDrag(e) {
+                if (!isDrag) return;
+                isDrag = false;
+                tlBar.classList.remove('drag');
+                window.removeEventListener('mousemove', onDrag);
+                window.removeEventListener('touchmove', onDrag);
+                window.removeEventListener('mouseup', endDrag);
+                window.removeEventListener('touchend', endDrag);
+                const src = e.changedTouches ? { clientX: e.changedTouches[0].clientX } : e;
+                const pct = pctFromEvent(src);
+                const sec = pct * bufSec;
+                if (sec >= bufSec - 0.5 && mode === 'dvr') { wasPlaying = true; goLive(); return; }
+                if (mode === 'live') { wasPlaying = true; goDVR(sec); }
+                else {
+                    replayVid.currentTime = sec;
+                    if (wasPlaying) replayVid.play().catch(() => {});
+                    refreshTL();
+                }
+            }
+
+            tlBar.addEventListener('click', e => {
+                if (isDrag || mode === 'idle') return;
+                const pct = pctFromEvent(e);
+                const sec = pct * bufSec;
+                if (sec >= bufSec - 0.5 && mode === 'dvr') { wasPlaying = true; goLive(); return; }
+                if (mode === 'live') { wasPlaying = true; goDVR(sec); }
+                else {
+                    replayVid.currentTime = sec;
+                    if (wasPlaying) replayVid.play().catch(() => {});
+                    refreshTL();
+                }
+            });
+
+            tlLive.addEventListener('click', () => { if (mode === 'dvr') { wasPlaying = true; goLive(); } });
+
+            (function tlLoop() {
+                requestAnimationFrame(tlLoop);
+                if (mode === 'live' && !isDrag) refreshTL();
+            })();
+
+            // ── STATS ─────────────────────────────────────────────────────────
+            function startStats() {
+                if (statsIval) return;
+                let fc = 0, lt = performance.now();
+                function raf(n) {
+                    if (!stream) return;
+                    fc++;
+                    if (n - lt >= 1000) { fpsCount = fc; fc = 0; lt = n; }
+                    requestAnimationFrame(raf);
+                }
+                requestAnimationFrame(raf);
+                statsIval = setInterval(() => {
+                    let ram = 'n/d';
+                    if (performance.memory) {
+                        const u = Math.round(performance.memory.usedJSHeapSize / 1_048_576);
+                        const t = Math.round(performance.memory.jsHeapSizeLimit / 1_048_576);
+                        ram = `${u}/${t} MB`;
+                    }
+                    const mb = (bufBytes / 1_048_576).toFixed(1);
+                    const m = Math.floor(bufSec / 60);
+                    const s = bufSec % 60;
+                    const res = liveVid.videoWidth ? `${liveVid.videoWidth}×${liveVid.videoHeight}` : '--';
+                    statsBar.innerHTML =
+                        `<span><i class="fas fa-chart-line"></i> FPS: ${fpsCount}</span><span>|</span>` +
+                        `<span><i class="fas fa-expand"></i> Res: ${res}</span><span>|</span>` +
+                        `<span><i class="fas fa-database"></i> Buffer: ${mb} MB</span><span>|</span>` +
+                        `<span><i class="fas fa-hourglass"></i> Gravado: ${m}:${String(s).padStart(2, '0')}</span><span>|</span>` +
+                        `<span><i class="fas fa-microchip"></i> RAM: ${ram}</span>`;
+                }, 1000);
+            }
+
+            function stopStats() {
+                clearInterval(statsIval);
+                statsIval = null;
+                statsBar.innerHTML =
+                    '<span><i class="fas fa-chart-line"></i> FPS: --</span><span>|</span>' +
+                    '<span><i class="fas fa-expand"></i> Res: --</span><span>|</span>' +
+                    '<span><i class="fas fa-database"></i> Buffer: 0 MB</span><span>|</span>' +
+                    '<span><i class="fas fa-hourglass"></i> Gravado: 0s</span><span>|</span>' +
+                    '<span><i class="fas fa-microchip"></i> RAM: --</span>';
+            }
+
+            // ── FRAME DELAYER (OTIMIZADO) ─────────────────────────────────────
+            class FrameDelayer {
+                constructor(video, canvas, delaySec) {
+                    this.video = video;
+                    this.canvas = canvas;
+                    this.ctx = canvas.getContext('2d');
+                    this.delaySec = delaySec;
+                    this.isRunning = false;
+                    this.animId = null;
+                    this.frameBuffer = []; // { time, canvas }
+                    this.maxFrames = 0;
+                }
+
+                start() {
+                    if (this.isRunning) return;
+                    this.isRunning = true;
+                    if (this.delaySec <= 0) {
+                        this.video.style.display = 'block';
+                        this.canvas.style.display = 'none';
+                        return;
+                    }
+                    this.video.style.display = 'none';
+                    this.canvas.style.display = 'block';
+                    this.canvas.width = this.video.videoWidth || 1280;
+                    this.canvas.height = this.video.videoHeight || 720;
+                    // Capture at reduced FPS to save memory (e.g., 15 fps)
+                    this.maxFrames = Math.ceil(this.delaySec * 15); // 15 captures per second
+                    this.frameBuffer = [];
+                    this.animId = requestAnimationFrame(this._capture.bind(this));
+                }
+
+                stop() {
+                    this.isRunning = false;
+                    if (this.animId) { cancelAnimationFrame(this.animId); this.animId = null; }
+                    this.frameBuffer = [];
+                    this.video.style.display = 'block';
+                    this.canvas.style.display = 'none';
+                }
+
+                setDelay(sec) {
+                    this.delaySec = sec;
+                    if (this.isRunning) { this.stop(); this.start(); }
+                }
+
+                _capture(now) {
+                    if (!this.isRunning) return;
+                    const video = this.video;
+                    if (video.readyState >= 2 && video.videoWidth > 0) {
+                        // Resize canvas to match video
+                        if (this.canvas.width !== video.videoWidth || this.canvas.height !== video.videoHeight) {
+                            this.canvas.width = video.videoWidth;
+                            this.canvas.height = video.videoHeight;
+                        }
+                        // Capture frame at reduced rate
+                        if (this.frameBuffer.length === 0 || (now - this.frameBuffer[this.frameBuffer.length-1].time) > (1000/15)) {
+                            const off = document.createElement('canvas');
+                            off.width = video.videoWidth;
+                            off.height = video.videoHeight;
+                            const offCtx = off.getContext('2d');
+                            offCtx.drawImage(video, 0, 0);
+                            this.frameBuffer.push({ time: now, canvas: off });
+                            // Remove frames older than delay
+                            const threshold = now - this.delaySec * 1000;
+                            while (this.frameBuffer.length > 0 && this.frameBuffer[0].time < threshold) {
+                                this.frameBuffer.shift();
+                            }
+                            // Keep buffer size under maxFrames
+                            while (this.frameBuffer.length > this.maxFrames) {
+                                this.frameBuffer.shift();
+                            }
+                        }
+                        // Draw oldest frame (delayed)
+                        if (this.frameBuffer.length > 0) {
+                            const oldest = this.frameBuffer[0];
+                            this.ctx.drawImage(oldest.canvas, 0, 0);
+                        }
+                    }
+                    this.animId = requestAnimationFrame(this._capture.bind(this));
+                }
+            }
+
+            // ── ACTIONS ───────────────────────────────────────────────────────
+            async function onStart() {
+                btnStart.disabled = true;
+                try {
+                    if (cameraOn && stream) {
+                        if (frameDelayer) { frameDelayer.setDelay(delaySeconds); frameDelayer.start(); }
+                        startRecorder(stream);
+                        goLive();
+                        btnStop.disabled = false;
+                        btnPP.disabled = false;
+                        btnDesligar.style.display = 'inline-flex';
+                        return;
+                    }
+                    const devId = camSel.value || undefined;
+                    const s = await openCamera(devId, resSel.value, fpsSel.value);
+                    stream = s;
+                    cameraOn = true;
+                    liveVid.srcObject = s;
+                    await liveVid.play();
+                    startRecorder(s);
+                    await populateCams();
+                    startStats();
+                    if (!frameDelayer) frameDelayer = new FrameDelayer(liveVid, delayCanvas, delaySeconds);
+                    else frameDelayer.setDelay(delaySeconds);
+                    frameDelayer.start();
+                    goLive();
+                    btnStop.disabled = false;
+                    btnPP.disabled = false;
+                    btnDesligar.style.display = 'inline-flex';
+                } catch (err) {
+                    toast(err.message, true);
+                    btnStart.disabled = false;
+                }
+            }
+
+            async function onSave() {
+                if (!chunks.length) { toast('Nenhum dado no buffer.'); return; }
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const now = new Date();
+                const fn = `replay_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}h${String(now.getMinutes()).padStart(2,'0')}.webm`;
+
+                // Se pasta padrão definida e Tauri disponível, salvar diretamente
+                const savedFolder = localStorage.getItem('tatamicam_save_folder');
+                if (savedFolder && isTauri()) {
+                    try {
+                        const { writeFile } = window.__TAURI__.fs;
+                        const arrayBuffer = await blob.arrayBuffer();
+                        const uint8Array = new Uint8Array(arrayBuffer);
+                        await writeFile(savedFolder + '/' + fn, uint8Array);
+                        toast(`Replay salvo em: ${savedFolder}`);
+                        return;
+                    } catch (e) {
+                        console.error('Erro ao salvar na pasta padrão:', e);
+                    }
+                }
+                // Fallback: diálogo de salvamento nativo do Tauri, ou download no navegador
+                if (isTauri() && window.__TAURI__.dialog) {
+                    try {
+                        const { save } = window.__TAURI__.dialog;
+                        const { writeFile } = window.__TAURI__.fs;
+                        const filePath = await save({ defaultPath: fn, filters: [{ name: 'Vídeo WebM', extensions: ['webm'] }] });
+                        if (filePath) {
+                            const arrayBuffer = await blob.arrayBuffer();
+                            const uint8Array = new Uint8Array(arrayBuffer);
+                            await writeFile(filePath, uint8Array);
+                            toast('Replay salvo!');
+                        }
+                    } catch(e) { toast('Salvamento cancelado.'); }
+                } else if (window.showSaveFilePicker) {
+                    try {
+                        const h = await window.showSaveFilePicker({ suggestedName: fn, types: [{ description: 'Vídeo WebM', accept: { 'video/webm': ['.webm'] } }] });
+                        const w = await h.createWritable();
+                        await w.write(blob);
+                        await w.close();
+                        toast('Replay salvo!');
+                    } catch (e) {
+                        if (e.name !== 'AbortError') {
+                            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fn; a.click(); URL.revokeObjectURL(a.href);
+                            toast('Download iniciado.');
+                        }
+                    }
+                } else {
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fn; a.click(); URL.revokeObjectURL(a.href);
+                    toast('Download iniciado.');
+                }
+            }
+
+            function executeStop() {
+                stopRecorder();
+                if (mode === 'dvr') { wasPlaying = true; goLive(); }
+                clearBuffer();
+                resetTimeline();
+                mode = 'live';
+                btnStop.disabled = true;
+                btnStart.disabled = false;
+                updatePP();
+                btnDesligar.style.display = 'inline-flex';
+            }
+
+            function onStop() {
+                if (bufSec > 0) {
+                    showConfirm({
+                        title: 'Salvar gravação?',
+                        message: 'Há vídeo no buffer. Deseja salvar antes de parar?',
+                        buttons: [
+                            { label: '<i class="fas fa-floppy-disk"></i> Salvar', class: 'gold', callback: async () => { await onSave(); executeStop(); } },
+                            { label: '<i class="fas fa-trash"></i> Descartar', class: '', callback: () => executeStop() },
+                            { label: 'Cancelar', class: '', callback: () => {} }
+                        ]
+                    });
+                } else { executeStop(); }
+            }
+
+            function executeDesligar() {
+                stopRecorder();
+                if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+                liveVid.srcObject = null;
+                replayVid.pause();
+                clearBuffer();
+                if (frameDelayer) frameDelayer.stop();
+                cameraOn = false;
+                mode = 'idle';
+                statusPill.innerHTML = '<i class="fas fa-circle-dot"></i> INATIVO';
+                statusPill.classList.remove('live');
+                bLive.classList.remove('dim');
+                bDvr.classList.remove('show');
+                liveWrap.classList.remove('hidden');
+                replayWrap.classList.add('hidden');
+                idleOv.classList.remove('gone');
+                btnStop.disabled = true;
+                btnStart.disabled = false;
+                btnDesligar.style.display = 'none';
+                updatePP();
+                stopStats();
+                resetTimeline();
+            }
+
+            function onDesligar() {
+                if (!cameraOn) return;
+                if (bufSec > 0) {
+                    showConfirm({
+                        title: 'Salvar gravação?',
+                        message: 'Há vídeo no buffer. Deseja salvar antes de desligar a câmera?',
+                        buttons: [
+                            { label: '<i class="fas fa-floppy-disk"></i> Salvar', class: 'gold', callback: async () => { await onSave(); executeDesligar(); } },
+                            { label: '<i class="fas fa-trash"></i> Descartar', class: '', callback: () => executeDesligar() },
+                            { label: 'Cancelar', class: '', callback: () => {} }
+                        ]
+                    });
+                } else { executeDesligar(); }
+            }
+
+            // ── RESTART CAPTURE ───────────────────────────────────────────────
+            async function restartCapture() {
+                if (!stream || restarting) return;
+                restarting = true;
+                [resSel, fpsSel, camSel].forEach(el => el.disabled = true);
+                stopRecorder();
+                if (frameDelayer) frameDelayer.stop();
+                stream.getTracks().forEach(t => t.stop());
+                try {
+                    const devId = camSel.value || undefined;
+                    const s = await openCamera(devId, resSel.value, fpsSel.value);
+                    stream = s;
+                    liveVid.srcObject = s;
+                    await liveVid.play();
+                    startRecorder(s);
+                    await populateCams();
+                    if (frameDelayer) { frameDelayer.setDelay(delaySeconds); frameDelayer.start(); }
+                    if (mode !== 'idle') goLive();
+                } catch (e) {
+                    toast(e.message, true);
+                } finally {
+                    [resSel, fpsSel, camSel].forEach(el => el.disabled = false);
+                    restarting = false;
+                }
+            }
+
+            // ── BIND EVENTS ───────────────────────────────────────────────────
+            btnStart.addEventListener('click', onStart);
+            btnStop.addEventListener('click', onStop);
+            btnDesligar.addEventListener('click', onDesligar);
+            btnPP.addEventListener('click', togglePP);
+            btnB5.addEventListener('click', () => {
+                if (mode === 'idle') { toast('Câmera não iniciada.'); return; }
+                if (mode === 'live') { wasPlaying = true; goDVR(Math.max(bufSec - 5, 0)); return; }
+                seekOffset(-5);
+            });
+            btnF5.addEventListener('click', () => {
+                if (mode === 'idle') { toast('Câmera não iniciada.'); return; }
+                if (mode === 'live') { wasPlaying = true; goDVR(Math.min(bufSec + 5, bufSec)); return; }
+                seekOffset(5);
+            });
+            btnSave.addEventListener('click', () => {
+                if (bufSec === 0) { toast('Nenhum vídeo gravado ainda.'); return; }
+                onSave();
+            });
+            s025.addEventListener('click', () => setSpeed(0.25));
+            s05.addEventListener('click', () => setSpeed(0.5));
+            s1.addEventListener('click', () => setSpeed(1));
+            s2.addEventListener('click', () => setSpeed(2));
+
+            liveVid.addEventListener('click', togglePP);
+            replayVid.addEventListener('click', togglePP);
+            liveVid.addEventListener('play', updatePP);
+            liveVid.addEventListener('pause', updatePP);
+            replayVid.addEventListener('play', updatePP);
+            replayVid.addEventListener('pause', updatePP);
+            replayVid.addEventListener('timeupdate', () => { if (!isDrag) refreshTL(); });
+            replayVid.addEventListener('ratechange', refreshSpeedButtons);
+            replayVid.addEventListener('ended', () => { wasPlaying = true; goLive(); updatePP(); });
+
+            bufSlider.addEventListener('input', e => {
+                const v = parseInt(e.target.value, 10);
+                bufLbl.textContent = `${v} min`;
+                maxBufSec = v * 60;
+                while (bufSec > maxBufSec && chunks.length > 1) { const o = chunks.shift(); bufSec -= 1; bufBytes -= o.size; }
+                updateEst();
+            });
+            delaySlider.addEventListener('input', e => {
+                const v = parseInt(e.target.value, 10);
+                delayLbl.textContent = `${v}s`;
+                delaySeconds = v;
+                if (frameDelayer && cameraOn) frameDelayer.setDelay(v);
+            });
+            resSel.addEventListener('change', () => restartCapture());
+            fpsSel.addEventListener('change', () => restartCapture());
+            camSel.addEventListener('change', () => { if (stream) restartCapture(); });
+            btnRefresh.addEventListener('click', async () => {
+                const ok = await requestPermission();
+                if (ok) { await populateCams(); toast('Lista de câmeras atualizada.'); }
+                else toast('Permissão negada.', true);
+            });
+
+            // ── FOLDER SELECTION ──────────────────────────────────────────────
+            btnChooseFolder.addEventListener('click', async () => {
+                if (!isTauri()) { toast('Escolha de pasta disponível apenas no aplicativo desktop.'); return; }
+                try {
+                    const { open } = window.__TAURI__.dialog;
+                    const selected = await open({ directory: true, multiple: false, title: 'Escolher pasta para salvar replays' });
+                    if (selected) {
+                        localStorage.setItem('tatamicam_save_folder', selected);
+                        folderPath.textContent = selected;
+                        toast('Pasta definida para salvamento automático.');
+                    }
+                } catch (e) { console.error('Error choosing folder:', e); }
+            });
+            btnClearFolder.addEventListener('click', () => {
+                localStorage.removeItem('tatamicam_save_folder');
+                folderPath.textContent = '';
+                toast('Pasta de salvamento removida.');
+            });
+            // Exibir pasta já salva
+            const savedFolder = localStorage.getItem('tatamicam_save_folder');
+            if (savedFolder) folderPath.textContent = savedFolder;
+
+            // ── ONBOARDING ────────────────────────────────────────────────────
+            function goStep(n) {
+                obStep = Math.min(Math.max(n, 0), TOTAL_OB_STEPS - 1);
+                obTrack.style.transform = `translateX(-${obStep * 100}%)`;
+                obDots.forEach((d, i) => d.classList.toggle('active', i === obStep));
+                btnObBack.disabled = obStep === 0;
+                const isLast = obStep === TOTAL_OB_STEPS - 1;
+                btnObNext.innerHTML = isLast ? '<i class="fas fa-check"></i> Começar' : 'Próximo <i class="fas fa-chevron-right"></i>';
+                if (obStep === 1) syncPermUI();
+                if (obStep !== 1) btnObNext.disabled = false;
+            }
+
+            function syncPermUI() {
+                if (permGranted) {
+                    permIcon.style.color = '#4caf50';
+                    permIcon.className = 'fas fa-check-circle big';
+                    permDesc.textContent = 'Câmeras disponíveis! Você pode prosseguir.';
+                    btnGrant.disabled = true;
+                    permStat.className = 'perm-status ok';
+                    permStat.innerHTML = '<i class="fas fa-check-circle"></i> Permissão concedida';
+                    btnObNext.disabled = false;
+                } else {
+                    permIcon.style.color = '';
+                    permIcon.className = 'fas fa-camera big';
+                    permDesc.textContent = 'Clique no botão abaixo e permita o acesso à câmera quando o navegador perguntar.';
+                    btnGrant.disabled = false;
+                    permStat.innerHTML = '';
+                    btnObNext.disabled = false;
+                }
+            }
+
+            function closeOb() {
+                ob.style.transition = 'opacity .3s';
+                ob.style.opacity = '0';
+                setTimeout(() => { ob.style.display = 'none'; }, 300);
+                if (permGranted) populateCams();
+            }
+
+            btnGrant.addEventListener('click', async () => {
+                btnGrant.disabled = true;
+                btnGrant.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aguardando...';
+                const ok = await requestPermission();
+                if (ok) { await populateCams(); syncPermUI(); }
+                else {
+                    permStat.className = 'perm-status err';
+                    permStat.innerHTML = '<i class="fas fa-times-circle"></i> Permissão negada. Verifique as configurações do navegador.';
+                    btnGrant.disabled = false;
+                    btnGrant.innerHTML = '<i class="fas fa-unlock"></i> Tentar novamente';
+                    btnObNext.disabled = false;
+                }
+            });
+
+            btnObNext.addEventListener('click', () => {
+                if (obStep === TOTAL_OB_STEPS - 1) { closeOb(); return; }
+                goStep(obStep + 1);
+            });
+            btnObBack.addEventListener('click', () => goStep(obStep - 1));
+            btnObSkip.addEventListener('click', closeOb);
+            obDots.forEach(d => d.addEventListener('click', () => goStep(parseInt(d.dataset.i))));
+
+            document.getElementById('btnHelp').addEventListener('click', () => {
+                ob.style.display = 'flex';
+                ob.style.opacity = '1';
+                ob.style.transition = '';
+                goStep(0);
+            });
+
+            // ── INIT ──────────────────────────────────────────────────────────
+            goStep(0);
+            populateCams();
+
+            window.addEventListener('beforeunload', e => {
+                if (bufSec > 0) { e.preventDefault(); e.returnValue = 'Há vídeo não salvo.'; }
+            });
+        })();
+    </script>
+</body>
+
+</html>

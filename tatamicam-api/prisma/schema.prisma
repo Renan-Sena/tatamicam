@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  SUPERADMIN
+}
+
+enum Plan {
+  BASIC
+  FEDERATION
+  CONFEDERATION
+}
+
+enum TokenStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum ActivationAction {
+  ACTIVATE
+  HEARTBEAT
+  TRANSFER
+  REVOKE
+  DEACTIVATE
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(USER)
+  tokens    LicenseToken[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LicenseToken {
+  id              String       @id @default(cuid())
+  code            String       @unique
+  userId          String
+  user            User         @relation(fields: [userId], references: [id])
+  plan            Plan
+  maxMachines     Int          @default(1)
+  status          TokenStatus  @default(ACTIVE)
+  activatedAt     DateTime?
+  lastHeartbeatAt DateTime?
+  expiresAt       DateTime?
+  currentMachine  Machine?     @relation("ActiveMachine")
+  machines        Machine[]    @relation("TokenMachines")
+  activationLogs  ActivationLog[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model Machine {
+  id          String       @id @default(cuid())
+  hwid        String       @unique
+  label       String?
+  tokenId     String? @unique
+  activeToken LicenseToken? @relation("ActiveMachine", fields: [tokenId], references: [id])
+  allTokens   LicenseToken[] @relation("TokenMachines")
+  firstSeenAt DateTime     @default(now())
+  lastSeenAt  DateTime     @default(now())
+  createdAt   DateTime     @default(now())
+}
+
+model ActivationLog {
+  id        String           @id @default(cuid())
+  tokenId   String
+  token     LicenseToken     @relation(fields: [tokenId], references: [id])
+  hwid      String
+  action    ActivationAction
+  ip        String?
+  userAgent String?
+  success   Boolean          @default(true)
+  details   String?
+  createdAt DateTime         @default(now())
+}

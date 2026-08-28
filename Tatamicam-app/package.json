@@ -1,0 +1,21 @@
+{
+  "name": "tatamicam",
+  "version": "1.0.0",
+  "description": "TatamiCam - Judo Replay System for FEJAMA",
+  "main": "index.html",
+  "scripts": {
+    "dev": "tauri dev",
+    "build:frontend": "tsc",
+    "build": "tauri build"
+  },
+  "author": "FEJAMA",
+  "license": "MIT",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-fs": "^2.5.1",
+    "http-server": "^14.1.1",
+    "serve": "^14.2.0",
+    "typescript": "^7.0.2"
+  }
+}

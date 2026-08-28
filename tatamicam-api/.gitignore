@@ -1,0 +1,9 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+# Chave privada de assinatura de licenças — NUNCA versionar (permite forjar licenças)
+license_private.pem
+*.private.pem
+
+/generated/prisma

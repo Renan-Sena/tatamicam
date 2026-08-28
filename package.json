@@ -1,0 +1,25 @@
+{
+  "dependencies": {
+    "docx": "^9.7.1"
+  },
+  "name": "tatamicam",
+  "version": "1.0.0",
+  "description": "Sistema **offline** e **portátil** de revisão em vídeo (DVR) desenvolvido para a Federação de Judô do Amazonas (FEJAMA).  \r Permite que árbitros e mesários revisem lances em tempo real, arrastando uma linha do tempo como no YouTube, **sem interromper a gravação ao vivo**. A câmera permanece ligada o tempo todo, pedindo permissão apenas uma única vez.",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fejama-projetos/TatamiCam.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fejama-projetos/TatamiCam/issues"
+  },
+  "homepage": "https://github.com/fejama-projetos/TatamiCam#readme"
+}
