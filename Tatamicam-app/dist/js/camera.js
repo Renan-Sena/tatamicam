@@ -15,7 +15,7 @@ for (let i = 0; i < 4; i++) {
         camCfg: { w: 1280, h: 720, fps: 30 }, replayUrl: null, cameraOn: false, bufferMode: 'ram',
         diskBuffer: null, deviceId: '', videoElement: null, delaySeconds: 0, mode: 'idle',
         wasPlaying: true, dvrFeed: null, recordMime: '',
-        lastChunkAt: 0, bufSecGrowing: false,
+        lastChunkAt: 0, bufSecGrowing: false, thumbs: [], thumbTick: 0,
     });
 }
 /* ─── Buffer RAM + alimentação do DVR ─── */
@@ -85,12 +85,98 @@ export function bufSecSmooth(slot) {
     const frac = Math.min(Math.max((performance.now() - slot.lastChunkAt) / 1000, 0), 1);
     return slot.bufSec + frac;
 }
+/* ─── Miniaturas da timeline ─── */
+const THUMB_EVERY_CHUNKS = 2; // 1 chunk = 1s
+const THUMB_W = 160;
+const THUMB_MAX = 240; // ~8 min amostrando a cada 2s
+// Canvas único reaproveitado: alvo é i3 de 7ª geração com 4 GB, onde alocar um canvas
+// por captura pressiona o GC sem necessidade.
+let thumbCanvas = null;
+let thumbEncoding = false;
+function releaseThumb(t) {
+    URL.revokeObjectURL(t.url);
+}
+/**
+ * Captura um quadro do vídeo ao vivo durante a gravação.
+ *
+ * É o mesmo princípio do storyboard do YouTube: buscar no vídeo a cada hover seria
+ * caro (no modo disco exigiria remontar a janela MSE) e travaria o mouse. Capturar
+ * enquanto grava custa um drawImage de 160px a cada 2s.
+ *
+ * Usa toBlob + object URL em vez de toDataURL: o toDataURL codifica de forma síncrona
+ * e devolve base64, que vira string UTF-16 no heap do JS (~12 KB por miniatura, ~3 MB
+ * no total). O blob fica fora do heap e a codificação não bloqueia a thread principal
+ * durante a gravação.
+ */
+function captureThumb(slot) {
+    const vid = slot.videoElement;
+    if (!vid || !vid.videoWidth || !vid.videoHeight)
+        return;
+    if (thumbEncoding)
+        return; // máquina lenta: não enfileira codificações
+    try {
+        const h = Math.max(1, Math.round(THUMB_W * (vid.videoHeight / vid.videoWidth)));
+        if (!thumbCanvas)
+            thumbCanvas = document.createElement('canvas');
+        if (thumbCanvas.width !== THUMB_W || thumbCanvas.height !== h) {
+            thumbCanvas.width = THUMB_W;
+            thumbCanvas.height = h;
+        }
+        const ctx = thumbCanvas.getContext('2d');
+        if (!ctx)
+            return;
+        ctx.drawImage(vid, 0, 0, THUMB_W, h);
+        const sec = slot.bufSec;
+        thumbEncoding = true;
+        thumbCanvas.toBlob((blob) => {
+            thumbEncoding = false;
+            if (!blob)
+                return;
+            slot.thumbs.push({ sec, url: URL.createObjectURL(blob) });
+            if (slot.thumbs.length > THUMB_MAX) {
+                for (const t of slot.thumbs.splice(0, slot.thumbs.length - THUMB_MAX))
+                    releaseThumb(t);
+            }
+        }, 'image/jpeg', 0.5);
+    }
+    catch (e) {
+        thumbEncoding = false;
+        // Câmera sem frame pronto ou canvas "tainted": preview é acessório, não pode
+        // derrubar a gravação.
+        console.warn('[THUMB] falha ao capturar quadro', e);
+    }
+}
+/** Miniatura mais próxima de `sec`, ou null se ainda não há nenhuma. */
+export function nearestThumb(slot, sec) {
+    let melhor = null;
+    let dist = Infinity;
+    for (const t of slot.thumbs) {
+        const d = Math.abs(t.sec - sec);
+        if (d < dist) {
+            dist = d;
+            melhor = t;
+        }
+    }
+    return melhor;
+}
+export function clearThumbs(slot) {
+    for (const t of slot.thumbs)
+        releaseThumb(t);
+    slot.thumbs = [];
+    slot.thumbTick = 0;
+}
 function trimBuffer(slot) {
     while (slot.bufSec > slot.maxBufSec && slot.chunks.length > 2) {
         const removed = slot.chunks.splice(1, 1)[0];
         if (removed) {
             slot.bufSec -= 1;
             slot.bufBytes -= removed.size;
+            // O conteúdo inteiro deslizou 1s para trás; as miniaturas precisam
+            // acompanhar, senão o preview passa a mostrar o quadro errado.
+            for (const t of slot.thumbs)
+                t.sec -= 1;
+            while (slot.thumbs.length && slot.thumbs[0].sec < 0)
+                releaseThumb(slot.thumbs.shift());
         }
     }
     if (slot.replayUrl && !slot.dvrFeed) {
@@ -293,6 +379,8 @@ export async function startRecorder(slotIndex) {
         // Medido DEPOIS do trim: em RAM saturada o +1 é desfeito e o buffer para de crescer.
         slot.bufSecGrowing = slot.bufSec > bufSecAntes;
         slot.lastChunkAt = performance.now();
+        if (slot.thumbTick++ % THUMB_EVERY_CHUNKS === 0)
+            captureThumb(slot);
     };
     const preferredMimes = [
         'video/webm;codecs=vp8',
@@ -394,6 +482,9 @@ export async function clearBuffer(slot) {
     }
     s.bufSec = 0;
     s.bufBytes = 0;
+    clearThumbs(s);
+    s.lastChunkAt = 0;
+    s.bufSecGrowing = false;
 }
 /* ─── DVR contínuo via MSE ─── */
 /** Escolhe um codec compatível com MSE, priorizando o mime REAL usado na gravação. */
@@ -544,6 +635,10 @@ export function stopDvrFeed(slot) {
             }
             catch (e) { /* já fechado */ }
         }
+        // Sem o revoke, o registro de object URLs continua referenciando o MediaSource
+        // e o SourceBuffer não é liberado: cada entrada em DVR segurava a janela inteira
+        // (até 300s ≈ 180 MB a 1080p60). Em 4 GB, poucas revisões esgotavam a memória.
+        URL.revokeObjectURL(slot.dvrFeed.url);
         slot.dvrFeed = null;
     }
 }

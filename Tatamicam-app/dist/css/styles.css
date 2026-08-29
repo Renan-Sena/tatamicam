@@ -1698,6 +1698,15 @@ body,
     display: flex !important;
 }
 
+/* Tela cheia de verdade: some com o cromo da aplicação.
+   O body é flex column com .stage em flex:1, então esconder estes três já faz o
+   vídeo ocupar a viewport inteira. */
+body.app-fullscreen .hdr,
+body.app-fullscreen .stats,
+body.app-fullscreen .hint {
+    display: none !important;
+}
+
 /* Estado fullscreen ativo no stage */
 .stage.fullscreen-active .camera-slot:not(.active-slot) {
     display: none;

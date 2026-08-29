@@ -48,11 +48,11 @@ export function initUI(elements: Record<string, HTMLElement | null>): void {
     }) as EventListener);
 
     document.addEventListener('mousemove', () => {
-    if (document.fullscreenElement) resetAutoHide();
+    if (fsAtivo()) resetAutoHide();
     });
 
     document.addEventListener('keydown', (e) => {
-        if (document.fullscreenElement) {
+        if (fsAtivo()) {
             resetAutoHide();
             // Atalhos de teclado (espaço, setas, etc.)
             handleFullscreenShortcuts(e);
@@ -80,9 +80,11 @@ function bindEvents(): void {
     (dom.s05_2 as HTMLButtonElement)?.addEventListener('click', () => setSpeed(0.5));
     (dom.s1_2 as HTMLButtonElement)?.addEventListener('click', () => setSpeed(1));
     (dom.s2_2 as HTMLButtonElement)?.addEventListener('click', () => setSpeed(2));
-    (dom.btnExitFullscreen as HTMLButtonElement)?.addEventListener('click', () => { if (document.fullscreenElement) document.exitFullscreen(); });
+    (dom.btnExitFullscreen as HTMLButtonElement)?.addEventListener('click', () => { if (fsAtivo()) void fsExit(); });
     (dom.btnPrevSlot as HTMLButtonElement)?.addEventListener('click', () => changeFullscreenSlot(-1));
     (dom.btnNextSlot as HTMLButtonElement)?.addEventListener('click', () => changeFullscreenSlot(1));
+    (dom.tlBar as HTMLElement)?.addEventListener('mousemove', (e) => showPreviewAt(pctFromEvent(e as MouseEvent)));
+    (dom.tlBar as HTMLElement)?.addEventListener('mouseleave', hidePreview);
     (dom.tlBar as HTMLElement)?.addEventListener('mousedown', startDrag);
     (dom.tlBar as HTMLElement)?.addEventListener('touchstart', startDrag, { passive: true });
     // Sem listener de 'click': o par mousedown/mouseup (startDrag/endDrag) já resolve
@@ -147,6 +149,7 @@ document.addEventListener('keydown', (e) => {
 });
 
     document.addEventListener('fullscreenchange', updateFullscreenUI);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
     const btnBlockActivate = document.getElementById('btnBlockActivate'); if (btnBlockActivate) btnBlockActivate.addEventListener('click', () => { hideLicenseBlock(); openActivateModal(); });
     const btnBlockBuy = document.getElementById('btnBlockBuy'); if (btnBlockBuy) btnBlockBuy.addEventListener('click', () => window.open('https://tatamicam.com/comprar', '_blank'));
     const btnBlockExit = document.getElementById('btnBlockExit'); if (btnBlockExit) btnBlockExit.addEventListener('click', () => { if (isTauri()) (window as any).__TAURI__.process.exit(0); else window.close(); });
@@ -238,11 +241,89 @@ function toggleFullscreen(): void {
         showToast('Elemento não encontrado.', true);
         return;
     }
-    if (!document.fullscreenElement) {
-        stage.requestFullscreen().catch(() => showToast('Tela cheia indisponível', true));
+    if (!fsAtivo()) {
+        fsRequest(stage).catch((e) => {
+            console.warn('[FS] requestFullscreen falhou', e);
+            showToast('Tela cheia indisponível', true);
+        });
     } else {
-        document.exitFullscreen();
+        void fsExit();
     }
+}
+
+/* ── Tela cheia (compatibilidade com WebKit) ── */
+
+/*
+ * O WKWebView (macOS) e o WebKitGTK (Zorin, alvo de produção) não expõem a API
+ * sem prefixo: stage.requestFullscreen era undefined e o clique lançava TypeError
+ * sem nenhum efeito visível. Estes wrappers tentam a padrão e caem na prefixada.
+ */
+type FsElement = Element & {
+    webkitRequestFullscreen?: () => Promise<void> | void;
+    webkitRequestFullScreen?: () => Promise<void> | void;   // WebKit antigo, "S" maiúsculo
+};
+type FsDocument = Document & {
+    webkitFullscreenElement?: Element | null;
+    webkitExitFullscreen?: () => Promise<void> | void;
+};
+
+let fsNativoAtivo = false;
+
+function fsElement(): Element | null {
+    const d = document as FsDocument;
+    return document.fullscreenElement ?? d.webkitFullscreenElement ?? null;
+}
+
+/** Tela cheia ativa, por qualquer um dos dois caminhos. */
+function fsAtivo(): boolean {
+    return !!fsElement() || fsNativoAtivo;
+}
+
+/** Tela cheia da JANELA, via Tauri. Independe do suporte do webview. */
+async function fsJanelaNativa(on: boolean): Promise<boolean> {
+    const w = (window as unknown as { __TAURI__?: any }).__TAURI__?.window;
+    if (!w?.getCurrentWindow) return false;
+    try {
+        await w.getCurrentWindow().setFullscreen(on);
+        fsNativoAtivo = on;
+        return true;
+    } catch (e) {
+        console.warn('[FS] setFullscreen nativo falhou', e);
+        return false;
+    }
+}
+
+async function fsRequest(el: Element): Promise<void> {
+    const e = el as FsElement;
+    const fn = el.requestFullscreen ?? e.webkitRequestFullscreen ?? e.webkitRequestFullScreen;
+    if (fn) {
+        try {
+            await fn.call(el);
+            return;
+        } catch (err) {
+            console.warn('[FS] fullscreen de elemento falhou; tentando janela nativa', err);
+        }
+    }
+    // O WKWebView do macOS só habilita fullscreen de elemento com uma preferência que
+    // o Tauri não liga por padrão. Numa app desktop, deixar a JANELA em tela cheia
+    // entrega o mesmo resultado ao árbitro — e funciona em qualquer webview.
+    if (await fsJanelaNativa(true)) {
+        updateFullscreenUI();
+        return;
+    }
+    throw new Error('API de tela cheia indisponível neste webview');
+}
+
+async function fsExit(): Promise<void> {
+    if (fsElement()) {
+        const d = document as FsDocument;
+        const fn = document.exitFullscreen ?? d.webkitExitFullscreen;
+        if (fn) {
+            try { await fn.call(document); } catch (e) { console.warn('[FS] falha ao sair', e); }
+        }
+        return;
+    }
+    if (fsNativoAtivo && await fsJanelaNativa(false)) updateFullscreenUI();
 }
 
 function isTimeInWindow(slot: cam.CameraSlot, time: number): boolean {
@@ -291,7 +372,12 @@ function updateFullscreenUI(): void {
     const ctrl = document.getElementById('ctrlBar');
     const btn = document.getElementById('btnFullscreen');
     
-    if (document.fullscreenElement) {
+    // A classe vai no body porque o fallback de janela nativa (webviews sem
+    // fullscreen de elemento) mantém a página inteira renderizada: header e faixas
+    // de status/dica continuariam visíveis sem isto.
+    document.body.classList.toggle('app-fullscreen', fsAtivo());
+
+    if (fsAtivo()) {
         stage?.classList.add('fullscreen-active');
         if (fs) {
             fs.classList.add('show');
@@ -399,7 +485,7 @@ function handleFullscreenShortcuts(e: KeyboardEvent): void {
             break;
         case 'Escape':
             // O navegador já sai da tela cheia, mas garantimos a UI
-            if (document.fullscreenElement) document.exitFullscreen();
+            if (fsAtivo()) void fsExit();
             break;
     }
 }
@@ -696,10 +782,112 @@ function timelineWindow(slot: cam.CameraSlot): { bufStart: number; bufWindow: nu
     };
 }
 
+/* ── Preview da timeline (hover estilo YouTube) ── */
+
+let previewEl: HTMLElement | null = null;
+let previewImg: HTMLImageElement | null = null;
+let previewTime: HTMLElement | null = null;
+
+/*
+ * Montado em JS, e não no index.html, porque existem dois index.html divergentes
+ * (raiz e dist/); criar aqui garante o mesmo comportamento seja qual for o servido.
+ */
+function buildPreview(): void {
+    if (previewEl || !dom.tlBar) return;
+
+    const style = document.createElement('style');
+    style.textContent = `
+.tl-preview { position: absolute; bottom: calc(100% + 34px); transform: translateX(-50%);
+  background: rgba(0,0,0,.9); border: 1px solid rgba(255,255,255,.18); border-radius: 8px;
+  padding: 4px; pointer-events: none; opacity: 0; transition: opacity .1s; z-index: 30;
+  box-shadow: 0 6px 18px rgba(0,0,0,.45); }
+.tl-preview.on { opacity: 1; }
+.tl-preview img { display: block; width: 160px; height: auto; border-radius: 4px; background: #000; }
+.tl-preview img[hidden] { display: none; }
+.tl-preview .tl-preview-t { display: block; text-align: center; color: #fff;
+  font-size: 12px; font-weight: 700; padding-top: 3px; }
+`;
+    document.head.appendChild(style);
+
+    previewEl = document.createElement('div');
+    previewEl.className = 'tl-preview';
+    previewEl.innerHTML = '<img alt=""><span class="tl-preview-t"></span>';
+    previewImg = previewEl.querySelector('img');
+    previewTime = previewEl.querySelector('.tl-preview-t');
+    (dom.tlBar as HTMLElement).appendChild(previewEl);
+}
+
+/** Mantém o balão dentro da barra: sem isto ele vaza da janela nas pontas. */
+function clampPct(pct: number): number {
+    const barW = (dom.tlBar as HTMLElement)?.getBoundingClientRect().width || 0;
+    if (!barW) return pct * 100;
+    const meia = 86;   // metade da largura do balão (160px + bordas)
+    const min = (meia / barW) * 100;
+    return Math.min(Math.max(pct * 100, min), 100 - min);
+}
+
+let previewUrlAtual: string | null = null;
+let previewPctPend: number | null = null;
+let previewRaf = 0;
+
+/**
+ * Agenda o desenho para no máximo uma vez por quadro.
+ *
+ * mousemove dispara ~60x/s e o alvo é um i3 de 7ª geração: sem isto seriam 60
+ * leituras de layout e 60 trocas de src por segundo, competindo com a gravação.
+ */
+function showPreviewAt(pct: number): void {
+    previewPctPend = pct;
+    if (previewRaf) return;
+    previewRaf = requestAnimationFrame(() => {
+        previewRaf = 0;
+        const p = previewPctPend;
+        previewPctPend = null;
+        if (p !== null) drawPreview(p);
+    });
+}
+
+function drawPreview(pct: number): void {
+    const slot = cam.getActiveSlot();
+    if (slot.mode === 'idle') { hidePreview(); return; }
+    buildPreview();
+    if (!previewEl) return;
+
+    const { bufStart, bufWindow } = timelineWindow(slot);
+    const sec = bufStart + pct * bufWindow;
+    const rotulo = formatTime(sec);
+
+    // Tooltip nativo da barra, que antes só era atualizado durante o arrasto.
+    if (dom.tlTip) {
+        dom.tlTip.style.left = pct * 100 + '%';
+        if (dom.tlTip.textContent !== rotulo) dom.tlTip.textContent = rotulo;
+    }
+
+    previewEl.style.left = clampPct(pct) + '%';
+    if (previewTime && previewTime.textContent !== rotulo) previewTime.textContent = rotulo;
+
+    // Trocar o src força uma decodificação do JPEG. Como as miniaturas são de 2 em 2
+    // segundos, quadros de mouse vizinhos caem na mesma: só troca quando muda mesmo.
+    const thumb = cam.nearestThumb(slot, sec);
+    const url = thumb?.url ?? null;
+    if (url !== previewUrlAtual && previewImg) {
+        previewUrlAtual = url;
+        if (url) { previewImg.src = url; previewImg.hidden = false; }
+        else { previewImg.removeAttribute('src'); previewImg.hidden = true; }
+    }
+    previewEl.classList.add('on');
+}
+
+function hidePreview(): void {
+    if (previewRaf) { cancelAnimationFrame(previewRaf); previewRaf = 0; }
+    previewPctPend = null;
+    previewEl?.classList.remove('on');
+}
+
 function refreshTL(): void { const slot = cam.getActiveSlot(); const { bufStart, bufWindow } = timelineWindow(slot); let cur = 0; if (slot.mode === 'dvr') { const r = document.getElementById(`replayVid${slot.id}`) as HTMLVideoElement; if (r && isFinite(r.currentTime)) { cur = bufStart + r.currentTime; } } else { cur = bufStart + bufWindow; } const pct = bufWindow > 0 ? ((cur - bufStart) / bufWindow) * 100 : 0; if (dom.tlProg) dom.tlProg.style.width = pct + '%'; if (dom.tlThumb) dom.tlThumb.style.left = pct + '%'; if (!isDrag) { if (dom.tlCur) dom.tlCur.textContent = formatTime(cur); if (dom.tlTot) dom.tlTot.textContent = formatTime(bufStart + bufWindow); } dom.tlLive?.classList.toggle('at-live', slot.mode === 'live' || cur >= bufStart + bufWindow - 0.5); }
 function resetTimeline(): void { if (dom.tlProg) dom.tlProg.style.width = '0%'; if (dom.tlThumb) dom.tlThumb.style.left = '0%'; if (dom.tlCur) dom.tlCur.textContent = '0:00'; if (dom.tlTot) dom.tlTot.textContent = '0:00'; dom.tlLive?.classList.add('at-live'); }
 function pctFromEvent(e: MouseEvent | TouchEvent): number { const r = (dom.tlBar as HTMLElement).getBoundingClientRect(); const x = ('touches' in e ? (e.touches[0] ?? e.changedTouches[0])?.clientX : (e as MouseEvent).clientX) ?? 0; return Math.min(Math.max((x - r.left) / r.width, 0), 1); }
-function applyDragVisual(pct: number): void { const slot = cam.getActiveSlot(); const { bufStart, bufWindow } = timelineWindow(slot); const sec = bufStart + pct * bufWindow; if (dom.tlProg) dom.tlProg.style.width = pct * 100 + '%'; if (dom.tlThumb) dom.tlThumb.style.left = pct * 100 + '%'; if (dom.tlTip) dom.tlTip.style.left = pct * 100 + '%'; if (dom.tlTip) dom.tlTip.textContent = formatTime(sec); if (dom.tlCur) dom.tlCur.textContent = formatTime(sec); }
+function applyDragVisual(pct: number): void { const slot = cam.getActiveSlot(); const { bufStart, bufWindow } = timelineWindow(slot); const sec = bufStart + pct * bufWindow; showPreviewAt(pct); if (dom.tlProg) dom.tlProg.style.width = pct * 100 + '%'; if (dom.tlThumb) dom.tlThumb.style.left = pct * 100 + '%'; if (dom.tlTip) dom.tlTip.style.left = pct * 100 + '%'; if (dom.tlTip) dom.tlTip.textContent = formatTime(sec); if (dom.tlCur) dom.tlCur.textContent = formatTime(sec); }
 function startDrag(e: MouseEvent | TouchEvent): void { const slot = cam.getActiveSlot(); if (slot.mode === 'idle') return; isDrag = true; dom.tlBar?.classList.add('drag'); slot.wasPlaying = slot.mode === 'dvr' ? !(document.getElementById(`replayVid${slot.id}`) as HTMLVideoElement)?.paused : !slot.videoElement?.paused; if (slot.mode === 'dvr') { const replayVid = document.getElementById(`replayVid${slot.id}`) as HTMLVideoElement; if (replayVid && !replayVid.paused) replayVid.pause(); } else { if (slot.videoElement && !slot.videoElement.paused) slot.videoElement.pause(); } applyDragVisual(pctFromEvent(e)); window.addEventListener('mousemove', onDrag); window.addEventListener('touchmove', onDrag, { passive: true }); window.addEventListener('mouseup', endDrag); window.addEventListener('touchend', endDrag); }
 
 
@@ -709,6 +897,7 @@ function endDrag(e: MouseEvent | TouchEvent): void {
     if (!isDrag) return;
     isDrag = false;
     dom.tlBar?.classList.remove('drag');
+    hidePreview();
     window.removeEventListener('mousemove', onDrag);
     window.removeEventListener('touchmove', onDrag);
     window.removeEventListener('mouseup', endDrag);
