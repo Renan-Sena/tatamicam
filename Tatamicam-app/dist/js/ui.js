@@ -106,7 +106,10 @@ function bindEvents() {
     dom.btnNextSlot?.addEventListener('click', () => changeFullscreenSlot(1));
     dom.tlBar?.addEventListener('mousedown', startDrag);
     dom.tlBar?.addEventListener('touchstart', startDrag, { passive: true });
-    dom.tlBar?.addEventListener('click', onTimelineClick);
+    // Sem listener de 'click': o par mousedown/mouseup (startDrag/endDrag) já resolve
+    // tanto o arrasto quanto o clique simples. Com os dois, todo clique disparava
+    // duas buscas concorrentes no mesmo <video> (o endDrag limpa isDrag antes de o
+    // evento 'click' chegar, então a guarda do onTimelineClick nunca pegava).
     dom.tlLive?.addEventListener('click', onLiveJump);
     bindActiveSlotVideoEvents(0);
     dom.bufSlider?.addEventListener('input', e => { const v = parseInt(e.target.value, 10); if (dom.bufLbl)
@@ -259,12 +262,10 @@ function handleSeek(delta) {
         showToast('Câmera não iniciada.');
         return;
     }
-    const isFull = slot.bufferMode === 'disk-full';
-    const bufWindow = isFull ? slot.bufSec : Math.min(slot.bufSec, slot.maxBufSec);
-    const bufStart = isFull ? 0 : Math.max(0, slot.bufSec - slot.maxBufSec);
+    const { bufStart, bufWindow } = timelineWindow(slot);
     if (slot.mode === 'live') {
         slot.wasPlaying = true;
-        const newPos = Math.min(Math.max(slot.bufSec + delta, bufStart), bufStart + bufWindow);
+        const newPos = Math.min(Math.max(bufStart + bufWindow + delta, bufStart), bufStart + bufWindow);
         goDVR(slot, newPos - bufStart);
         return;
     }
@@ -691,17 +692,25 @@ async function goDVR(slot, seekSec) {
             // bloqueia o play() chamado após await (fora do gesto de clique), que era o
             // motivo de ficar pausado no ponto buscado.
             replayVid.muted = true;
-            replayVid.src = url;
-            await sourceReady;
-            await new Promise((resolve) => {
-                if (replayVid.readyState >= 1) {
-                    resolve();
-                    return;
-                }
+            // Descarta a mídia da sessão de replay anterior ANTES de trocar o src. O
+            // goLiveSlot() não mexe no replayVid, então readyState/duration/currentTime
+            // sobrevivem ao retorno para o ao vivo; na segunda entrada em DVR o seek
+            // acontecia contra os metadados velhos e a timeline deixava de corresponder
+            // ao vídeo exibido.
+            replayVid.pause();
+            replayVid.removeAttribute('src');
+            replayVid.load();
+            // Registrado antes do src: com MSE o loadedmetadata pode disparar assim que
+            // os segmentos são anexados, e o listener não pode perder o evento.
+            const metadataReady = new Promise((resolve) => {
                 const done = () => resolve();
                 replayVid.addEventListener('loadedmetadata', done, { once: true });
                 replayVid.addEventListener('error', done, { once: true });
+                setTimeout(done, 5000); // segurança: não trava a UI se o evento não vier
             });
+            replayVid.src = url;
+            await sourceReady;
+            await metadataReady;
             // WebM do MediaRecorder não tem duração/cues → duration=Infinity e o seek pausa
             // sozinho no ponto buscado. Força a varredura até o fim para o navegador calcular
             // a duração real e tornar o vídeo seekável.
@@ -813,14 +822,27 @@ function setSpeed(rate) { const slot = cam.getActiveSlot(); if (slot.mode !== 'd
 function refreshSpeedButtons() { const slot = cam.getActiveSlot(); const replayVid = document.getElementById(`replayVid${slot.id}`); const r = replayVid?.playbackRate ?? 1; const pairs = [[dom.s025, 0.25], [dom.s05, 0.5], [dom.s1, 1], [dom.s2, 2], [dom.s025_2, 0.25], [dom.s05_2, 0.5], [dom.s1_2, 1], [dom.s2_2, 2]]; pairs.forEach(([b, v]) => { if (b)
     b.classList.toggle('spd-on', r === v); }); }
 /* ── TIMELINE ── */
-function refreshTL() { const slot = cam.getActiveSlot(); const isFull = slot.bufferMode === 'disk-full'; const bufWindow = isFull ? slot.bufSec : Math.min(slot.bufSec, slot.maxBufSec); const bufStart = isFull ? 0 : Math.max(0, slot.bufSec - slot.maxBufSec); let cur = 0; if (slot.mode === 'dvr') {
+/**
+ * Faixa que a timeline representa. Único ponto de cálculo: refreshTL, endDrag e
+ * applyDragVisual precisam concordar, senão o ponto clicado não corresponde ao
+ * desenhado. Usa bufSecSmooth para o cursor não recuar a cada chunk.
+ */
+function timelineWindow(slot) {
+    const total = cam.bufSecSmooth(slot);
+    const isFull = slot.bufferMode === 'disk-full';
+    return {
+        bufStart: isFull ? 0 : Math.max(0, total - slot.maxBufSec),
+        bufWindow: isFull ? total : Math.min(total, slot.maxBufSec),
+    };
+}
+function refreshTL() { const slot = cam.getActiveSlot(); const { bufStart, bufWindow } = timelineWindow(slot); let cur = 0; if (slot.mode === 'dvr') {
     const r = document.getElementById(`replayVid${slot.id}`);
     if (r && isFinite(r.currentTime)) {
         cur = bufStart + r.currentTime;
     }
 }
 else {
-    cur = slot.bufSec;
+    cur = bufStart + bufWindow;
 } const pct = bufWindow > 0 ? ((cur - bufStart) / bufWindow) * 100 : 0; if (dom.tlProg)
     dom.tlProg.style.width = pct + '%'; if (dom.tlThumb)
     dom.tlThumb.style.left = pct + '%'; if (!isDrag) {
@@ -834,8 +856,8 @@ function resetTimeline() { if (dom.tlProg)
     dom.tlThumb.style.left = '0%'; if (dom.tlCur)
     dom.tlCur.textContent = '0:00'; if (dom.tlTot)
     dom.tlTot.textContent = '0:00'; dom.tlLive?.classList.add('at-live'); }
-function pctFromEvent(e) { const r = dom.tlBar.getBoundingClientRect(); const x = ('touches' in e ? e.touches[0]?.clientX : e.clientX) ?? 0; return Math.min(Math.max((x - r.left) / r.width, 0), 1); }
-function applyDragVisual(pct) { const slot = cam.getActiveSlot(); const isFull = slot.bufferMode === 'disk-full'; const bufWindow = isFull ? slot.bufSec : Math.min(slot.bufSec, slot.maxBufSec); const bufStart = isFull ? 0 : Math.max(0, slot.bufSec - slot.maxBufSec); const sec = bufStart + pct * bufWindow; if (dom.tlProg)
+function pctFromEvent(e) { const r = dom.tlBar.getBoundingClientRect(); const x = ('touches' in e ? (e.touches[0] ?? e.changedTouches[0])?.clientX : e.clientX) ?? 0; return Math.min(Math.max((x - r.left) / r.width, 0), 1); }
+function applyDragVisual(pct) { const slot = cam.getActiveSlot(); const { bufStart, bufWindow } = timelineWindow(slot); const sec = bufStart + pct * bufWindow; if (dom.tlProg)
     dom.tlProg.style.width = pct * 100 + '%'; if (dom.tlThumb)
     dom.tlThumb.style.left = pct * 100 + '%'; if (dom.tlTip)
     dom.tlTip.style.left = pct * 100 + '%'; if (dom.tlTip)
@@ -864,9 +886,7 @@ function endDrag(e) {
     window.removeEventListener('touchend', endDrag);
     const slot = cam.getActiveSlot();
     const pct = pctFromEvent(e);
-    const isFull = slot.bufferMode === 'disk-full';
-    const bufWindow = isFull ? slot.bufSec : Math.min(slot.bufSec, slot.maxBufSec);
-    const bufStart = isFull ? 0 : Math.max(0, slot.bufSec - slot.maxBufSec);
+    const { bufStart, bufWindow } = timelineWindow(slot);
     const sec = Math.min(Math.max(bufStart + pct * bufWindow, bufStart), bufStart + bufWindow);
     if (slot.mode === 'live') {
         slot.wasPlaying = true;
@@ -890,21 +910,6 @@ function endDrag(e) {
     }
     refreshTL();
 }
-function onTimelineClick(e) { if (isDrag)
-    return; const slot = cam.getActiveSlot(); if (slot.mode === 'idle')
-    return; const pct = pctFromEvent(e); const isFull = slot.bufferMode === 'disk-full'; const bufWindow = isFull ? slot.bufSec : Math.min(slot.bufSec, slot.maxBufSec); const bufStart = isFull ? 0 : Math.max(0, slot.bufSec - slot.maxBufSec); const sec = Math.min(Math.max(bufStart + pct * bufWindow, bufStart), bufStart + bufWindow); if (slot.mode === 'live') {
-    slot.wasPlaying = true;
-    goDVR(slot, sec - bufStart);
-}
-else {
-    const replayVid = document.getElementById(`replayVid${slot.id}`);
-    if (replayVid) {
-        replayVid.currentTime = sec - bufStart;
-        if (slot.wasPlaying)
-            replayVid.play().catch(() => { });
-    }
-    refreshTL();
-} }
 function onLiveJump() { const slot = cam.getActiveSlot(); if (slot.mode === 'dvr') {
     slot.wasPlaying = true;
     goLiveSlot(slot.id);

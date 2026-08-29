@@ -559,6 +559,12 @@ video::-webkit-media-controls-enclosure {
     font-weight: 600;
     color: var(--grey);
     margin-top: 6px;
+    /* A .tl-bar é position:relative e a área de clique invisível dela (::before, 28px)
+       desce ~10px abaixo da barra, cobrindo o topo desta linha — inclusive do botão
+       AO VIVO. Sem isto, a barra (posicionada) pinta acima desta linha (estática) e
+       roubava os cliques do botão, que viravam busca na timeline. */
+    position: relative;
+    z-index: 1;
 }
 
 .live-jump {

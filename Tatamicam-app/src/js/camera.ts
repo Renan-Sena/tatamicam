@@ -21,6 +21,8 @@ export interface CameraSlot {
     videoElement: HTMLVideoElement | null;
     delaySeconds: number;
     mode: 'idle' | 'live' | 'dvr';
+    lastChunkAt: number;      // performance.now() do último chunk (0 = nenhum ainda)
+    bufSecGrowing: boolean;   // o último chunk realmente aumentou bufSec?
     wasPlaying: boolean;
     dvrFeed: DvrFeed | null;
     recordMime: string;
@@ -61,6 +63,7 @@ for (let i = 0; i < 4; i++) {
         camCfg: { w: 1280, h: 720, fps: 30 }, replayUrl: null, cameraOn: false, bufferMode: 'ram',
         diskBuffer: null, deviceId: '', videoElement: null, delaySeconds: 0, mode: 'idle',
         wasPlaying: true, dvrFeed: null, recordMime: '',
+        lastChunkAt: 0, bufSecGrowing: false,
     });
 }
 
@@ -113,6 +116,23 @@ async function feedDvrIfActive(slot: CameraSlot, blob: Blob): Promise<void> {
             stopDvrFeed(slot);
         }
     }
+}
+
+/**
+ * bufSec com o degrau interpolado.
+ *
+ * bufSec sobe 1 a cada chunk (1s), enquanto o currentTime do replay avança de forma
+ * contínua. Como a timeline divide um pelo outro, o cursor avançava durante o segundo
+ * e recuava no instante do chunk — o vaivém. Interpolar a fração do segundo corrente
+ * deixa o denominador contínuo e o cursor estável.
+ *
+ * Quando o buffer satura (RAM no teto), bufSec passa a ser constante e não há degrau
+ * para interpolar: somar a fração aí é que criaria o serrilhado.
+ */
+export function bufSecSmooth(slot: CameraSlot): number {
+    if (!slot.bufSecGrowing || !slot.lastChunkAt) return slot.bufSec;
+    const frac = Math.min(Math.max((performance.now() - slot.lastChunkAt) / 1000, 0), 1);
+    return slot.bufSec + frac;
 }
 
 function trimBuffer(slot: CameraSlot): void {
@@ -269,14 +289,18 @@ export async function startRecorder(slotIndex?: number): Promise<void> {
     // Handler dos chunks (independe do codec escolhido).
     const onData = async (e: BlobEvent): Promise<void> => {
         if (!e.data || e.data.size === 0) return;
+        const bufSecAntes = slot.bufSec;
         slot.bufSec += 1;           // cada chunk = 1s (mantemos timeslice 1000)
         slot.bufBytes += e.data.size;
         feedDvrIfActive(slot, e.data);
         if (slot.bufferMode === 'disk' || slot.bufferMode === 'disk-full') {
             if (slot.diskBuffer) await slot.diskBuffer.addChunk(e.data);
         } else if (slot.bufferMode === 'ram') {
-            pushChunk(slot, e.data);
+            pushChunk(slot, e.data);   // pode aparar e devolver bufSec ao teto
         }
+        // Medido DEPOIS do trim: em RAM saturada o +1 é desfeito e o buffer para de crescer.
+        slot.bufSecGrowing = slot.bufSec > bufSecAntes;
+        slot.lastChunkAt = performance.now();
     };
 
     const preferredMimes = [
@@ -401,31 +425,35 @@ export async function prepareReplaySource(slot: CameraSlot, seekSec?: number): P
                 let end = slot.bufSec;
 
                 if (slot.bufferMode === 'disk' || slot.bufferMode === 'disk-full') {
-    if (!slot.diskBuffer) throw new Error('Buffer de disco não inicializado');
-    const target = seekSec ?? slot.bufSec;
-    const start = Math.max(0, target - 30);
-    const end = target + 30;
-    let segments = await slot.diskBuffer.getSegmentsBetween(start, end);
-    
-    // Garante que o primeiro segmento (init) esteja incluído
-    if (slot.diskBuffer.segments.length > 0) {
-        const firstSeg = slot.diskBuffer.segments[0];
-        const firstIncluded = firstSeg.startTime >= start && firstSeg.endTime <= end;
-        if (!firstIncluded) {
-            try {
-                const tauri = (window as any).__TAURI__;
-                const firstData = await tauri.fs.readFile(firstSeg.filePath);
-                segments.unshift(firstData);
-            } catch (e) {
-                console.error('Erro ao carregar init segment', e);
-            }
-        }
-    }
-    
-    for (const data of segments) {
-        await appendBufferSafely(sourceBuffer, data);
-    }
-} else {
+                    if (!slot.diskBuffer) throw new Error('Buffer de disco não inicializado');
+                    // Só ±30s em volta do ponto buscado entram no SourceBuffer. Estas
+                    // atribuições precisam alcançar o start/end externos: são eles que
+                    // viram windowStart/windowEnd, de onde o isWithinWindow() da UI
+                    // decide se um seek cabe no que já está carregado. Declará-los de
+                    // novo aqui fazia a janela ser reportada como 0..bufSec.
+                    start = Math.max(0, target - 30);
+                    end = Math.min(target + 30, slot.bufSec);
+                    let segments = await slot.diskBuffer.getSegmentsBetween(start, end);
+
+                    // Garante que o primeiro segmento (init) esteja incluído
+                    if (slot.diskBuffer.segments.length > 0) {
+                        const firstSeg = slot.diskBuffer.segments[0];
+                        const firstIncluded = firstSeg.startTime >= start && firstSeg.endTime <= end;
+                        if (!firstIncluded) {
+                            try {
+                                const tauri = (window as any).__TAURI__;
+                                const firstData = await tauri.fs.readFile(firstSeg.filePath);
+                                segments.unshift(firstData);
+                            } catch (e) {
+                                console.error('Erro ao carregar init segment', e);
+                            }
+                        }
+                    }
+
+                    for (const data of segments) {
+                        await appendBufferSafely(sourceBuffer, data);
+                    }
+                } else {
                     // RAM: carrega todos os chunks (limitado pelo maxBufSec)
                     const chunksData: Uint8Array[] = [];
                     for (const blob of slot.chunks) {

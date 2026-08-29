@@ -1,3 +1,6 @@
+// Primeiro import de propósito: o logger instala a captura do console no corpo do
+// próprio módulo, então precisa ser avaliado antes dos demais.
+import { initLogPanel, initLogPersistence, log } from './logger.js';
 import { initOnboarding } from './onboarding.js';
 import { initUI } from './ui.js';
 import { populateCameraList } from './camera.js';
@@ -105,11 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (settingsOverlay)
             settingsOverlay.classList.remove('open');
     });
-    window.addEventListener('error', (event) => {
-        console.error('[ERRO GLOBAL]', event.message, event.filename, event.lineno, event.colno, event.error);
-    });
-    window.addEventListener('unhandledrejection', (event) => {
-        console.error('[PROMISE REJECTION]', event.reason);
-    });
+    initLogPanel();
+    void initLogPersistence(); // assíncrono de propósito: não atrasa a subida da UI
+    log.info('APP', `TatamiCam iniciado — ${window.innerWidth}x${window.innerHeight}`);
 });
 //# sourceMappingURL=main.js.map

@@ -28,3 +28,5 @@ Thumbs.db
 
 # ── Build ──
 dist/
+# ── Logs de debug ──
+logs/

@@ -36,12 +36,38 @@ fn get_hwid() -> String {
     hasher.finalize().iter().map(|b| format!("{:02x}", b)).collect::<String>()
 }
 
+/// Pasta onde o front-end grava os logs de debug.
+///
+/// Em desenvolvimento aponta para <Tatamicam-app>/logs, para o log ficar junto do
+/// código e ser lido direto do repositório. CARGO_MANIFEST_DIR é resolvido em tempo
+/// de compilação e aponta para src-tauri, então o pai é a raiz do app.
+///
+/// Em release esse caminho é o da máquina que compilou e não existe na máquina do
+/// usuário, então lá vale o diretório de dados locais do próprio app.
+#[tauri::command]
+fn log_dir(app: tauri::AppHandle) -> Result<String, String> {
+    let dir = if cfg!(debug_assertions) {
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .ok_or_else(|| "CARGO_MANIFEST_DIR sem diretório pai".to_string())?
+            .join("logs")
+    } else {
+        use tauri::Manager;
+        app.path()
+            .app_local_data_dir()
+            .map_err(|e| e.to_string())?
+            .join("logs")
+    };
+    Ok(dir.to_string_lossy().into_owned())
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
             get_hwid,
+            log_dir,
             license::verify_license_jwt,
         ])
         .setup(|app| {
