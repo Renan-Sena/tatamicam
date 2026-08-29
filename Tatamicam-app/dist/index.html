@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>FEJAMA · TatamiCam</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,900;1,700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <script type="module" src="js/main.js" defer></script>
+</head>
+
+<body>
+    <!-- ONBOARDING -->
+    <div id="onboarding">
+        <div class="ob-backdrop"></div>
+        <div class="ob-modal">
+            <div class="ob-header">
+                <div class="ob-icon"><i class="fas fa-video"></i></div>
+                <div>
+                    <h2>Sistema de Replay FEJAMA</h2>
+                    <p>Arbitragem de Judô com DVR em tempo real</p>
+                </div>
+            </div>
+            <div class="ob-dots" id="obDots">
+                <div class="ob-dot active" data-i="0"></div>
+                <div class="ob-dot" data-i="1"></div>
+                <div class="ob-dot" data-i="2"></div>
+                <div class="ob-dot" data-i="3"></div>
+            </div>
+            <div class="ob-steps">
+                <div class="ob-track" id="obTrack">
+                    <div class="ob-step">
+                        <h3><i class="fas fa-star"></i> Bem-vindo ao TatamiCam</h3>
+                        <ul>
+                            <li><i class="fas fa-circle-play"></i><span><strong>Gravação ao vivo</strong> com qualquer
+                                    câmera USB ou IP (RTSP).</span></li>
+                            <li><i class="fas fa-clock-rotate-left"></i><span><strong>Replay instantâneo</strong>
+                                    arrastando a barra vermelha — como no YouTube.</span></li>
+                            <li><i class="fas fa-gauge-high"></i><span><strong>Velocidades:</strong> 0.25×, 0.5×, 1× ou
+                                    2×.</span></li>
+                            <li><i class="fas fa-floppy-disk"></i><span><strong>Salvamento automático</strong> em pasta
+                                    configurável.</span></li>
+                            <li><i class="fas fa-expand"></i><span><strong>Tela cheia</strong> com controles
+                                    flutuantes.</span></li>
+                        </ul>
+                    </div>
+                    <div class="ob-step">
+                        <h3><i class="fas fa-camera"></i> Permissão de câmera</h3>
+                        <p style="font-size:13px;color:rgba(255,255,255,.75);font-weight:600;margin-bottom:4px;">O
+                            navegador pedirá permissão <strong>apenas uma vez</strong>. Depois de concedida, a câmera
+                            fica disponível para todas as funções.</p>
+                        <div class="perm-box">
+                            <i class="fas fa-camera big" id="permIcon"></i>
+                            <p id="permDesc">Clique no botão abaixo e permita o acesso quando solicitado.</p>
+                            <button id="btnGrantPerm"><i class="fas fa-unlock"></i> Permitir câmera</button>
+                            <div class="perm-status" id="permStatus"></div>
+                        </div>
+                    </div>
+                    <div class="ob-step">
+                        <h3><i class="fas fa-hand-pointer"></i> Como usar na arbitragem</h3>
+                        <ul>
+                            <li><i class="fas fa-1"></i><span>Abra as <strong>Configurações</strong> no menu hambúrguer
+                                    e escolha câmera, resolução, modo de buffer e delay.</span></li>
+                            <li><i class="fas fa-2"></i><span>Clique em <strong>INICIAR</strong>. A gravação começa
+                                    imediatamente (ou após o delay configurado).</span></li>
+                            <li><i class="fas fa-3"></i><span>Para revisar um lance, <strong>arraste a barra
+                                        vermelha</strong> ou use os botões <strong>-5s / +5s</strong>.</span></li>
+                            <li><i class="fas fa-4"></i><span>O replay fica no ponto escolhido — clique em <strong>AO
+                                        VIVO</strong> para voltar ao tempo real.</span></li>
+                            <li><i class="fas fa-5"></i><span>Salve o replay a qualquer momento com o botão
+                                    <strong>SALVAR</strong>.</span></li>
+                        </ul>
+                    </div>
+                    <div class="ob-step">
+                        <h3><i class="fas fa-lightbulb"></i> Dicas e segurança</h3>
+                        <ul>
+                            <li><i class="fas fa-shield-haltered"></i><span>Ao <strong>PARAR</strong> ou
+                                    <strong>DESLIGAR</strong>, você será perguntado se deseja salvar o buffer antes de
+                                    interromper.</span></li>
+                            <li><i class="fas fa-database"></i><span>Modos de buffer: <strong>RAM</strong> (rápido,
+                                    volátil), <strong>Disco Circular</strong> (seguro, mantém últimos minutos),
+                                    <strong>Disco Total</strong> (gravação contínua).</span></li>
+                            <li><i class="fas fa-hourglass-start"></i><span><strong>Delay ao vivo</strong> configurável
+                                    de 0 a 10 segundos — use com moderação em PCs com pouca RAM.</span></li>
+                            <li><i class="fas fa-desktop"></i><span>Use o botão <strong>Tela Cheia</strong> no canto do
+                                    vídeo ou no menu para focar na arbitragem.</span></li>
+                            <li><i class="fas fa-circle-question"></i><span>O botão <strong>?</strong> no cabeçalho
+                                    reabre este guia a qualquer momento.</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="ob-footer">
+                <button id="btnObBack" style="background:var(--n3);" disabled><i class="fas fa-chevron-left"></i>
+                    Voltar</button>
+                <button id="btnObSkip">Pular tutorial</button>
+                <button id="btnObNext" class="red">Próximo <i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP -->
+    <header class="hdr">
+        <div class="hdr-l">
+            <button class="btn-hamburger" id="btnHamburger" title="Menu"><i class="fas fa-bars"></i></button>
+            <img class="logo-img" src="app-icon.png" alt="FEJAMA"
+                onerror="this.style.display='none';document.getElementById('logoPh').style.display='flex'">
+            <div id="logoPh" class="logo-ph" style="display:none">FEJ</div>
+            <div class="logo-txt">
+                <div class="logo-main">FE<em>JAMA</em></div>
+                <div class="logo-sub">Federação de Judô do Amazonas</div>
+            </div>
+        </div>
+        <div class="hdr-r">
+            <button class="btn-help" id="btnHelp"><i class="fas fa-circle-question"></i> Ajuda</button>
+            <div class="pill" id="statusPill"><i class="fas fa-circle-dot"></i> INATIVO</div>
+        </div>
+    </header>
+
+    <!-- DRAWER -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">
+            <h3>TatamiCam</h3>
+            <button class="drawer-close" id="drawerClose"><i class="fas fa-times"></i></button>
+        </div>
+        <nav class="drawer-nav">
+            <button id="menuActivateToken" class="drawer-item"><i class="fas fa-key"></i> Ativar Token</button>
+            <button id="menuConfig" class="drawer-item"><i class="fas fa-cog"></i> Configurações</button>
+            <button id="menuFullscreen" class="drawer-item"><i class="fas fa-expand"></i> Tela Cheia</button>
+            <button id="menuHelp" class="drawer-item"><i class="fas fa-question-circle"></i> Ajuda</button>
+        </nav>
+    </div>
+
+    <!-- VIDEO (grid 2x2) -->
+    <div class="stage">
+        <div class="slots-container cameras-1" id="slotsContainer">
+            <div class="stage-box camera-slot active-slot" id="slot0" data-slot="0">
+                <div class="v-wrap" id="liveWrap0">
+                    <video id="liveVid0" autoplay muted playsinline></video>
+                    <canvas id="delayCanvas0" style="display:none;"></canvas>
+                </div>
+                <div class="v-wrap hidden" id="replayWrap0">
+                    <video id="replayVid0" playsinline preload="auto"></video>
+                </div>
+                <div class="badge-live" id="bLive0"><span class="dot"></span> AO VIVO</div>
+                <div class="badge-dvr" id="bDvr0"><i class="fas fa-clock-rotate-left"></i> DVR</div>
+                <div class="idle-overlay" id="idleOv0"><i class="fas fa-video-slash"></i>
+                    <p>Câmera inativa</p>
+                </div>
+                <div class="flash" id="flash0"><i class="fas fa-play" id="flashIco0"></i></div>
+                <div class="camera-label">Câmera 1</div>
+            </div>
+        </div>
+        <button id="btnAddCamera" class="btn-add-camera" title="Adicionar câmera"><i class="fas fa-plus"></i></button>
+
+        <!-- TIMELINE -->
+        <div class="tl-wrap" id="tlWrap">
+            <div class="tl-bar" id="tlBar">
+                <div class="tl-prog" id="tlProg"></div>
+                <div class="tl-thumb" id="tlThumb" style="left:0%"></div>
+                <div class="tl-tip" id="tlTip">0:00</div>
+            </div>
+            <div class="tl-lbl">
+                <span id="tlCur">0:00</span>
+                <button class="live-jump" id="tlLive"><span class="dot" style="background:var(--red)"></span> AO
+                    VIVO</button>
+                <span id="tlTot">0:00</span>
+            </div>
+        </div>
+
+        <!-- FULLSCREEN CONTROLS -->
+        <div class="fullscreen-controls" id="fullscreenControls">
+            <div class="fs-row">
+                <button id="btnPrevSlot" title="Câmera anterior"><i class="fas fa-chevron-left"></i></button>
+                <button id="btnPP2"><i class="fas fa-play"></i></button>
+                <button id="btnB5_2"><i class="fas fa-backward-step"></i> -5s</button>
+                <button id="btnF5_2"><i class="fas fa-forward-step"></i> +5s</button>
+                <button id="btnSave2" class="gold"><i class="fas fa-floppy-disk"></i></button>
+                <!-- Botão de zoom nos controles de tela cheia -->
+                <button id="btnZoom2" title="Zoom"><i class="fas fa-search-plus"></i></button>
+                <div class="spd-grp">
+                    <button id="s025_2">0.25×</button>
+                    <button id="s05_2">0.5×</button>
+                    <button id="s1_2">1×</button>
+                    <button id="s2_2">2×</button>
+                </div>
+                <button id="btnNextSlot" title="Próxima câmera"><i class="fas fa-chevron-right"></i></button>
+                <button id="btnExitFullscreen" title="Sair da tela cheia"><i class="fas fa-compress"></i></button>
+            </div>
+        </div>
+
+        <!-- CAMERA SELECTOR MODAL -->
+        <div class="modal-overlay" id="cameraSelectorOverlay" style="display:none;">
+            <div class="modal" id="cameraSelectorModal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-camera"></i> Selecionar Câmera</h3>
+                    <button class="modal-close" id="cameraSelectorClose"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom:8px;">Escolha o dispositivo para <strong id="cameraSlotLabel">Câmera
+                            1</strong></p>
+                    <select id="cameraDeviceSelect">
+                        <option value="">Carregando...</option>
+                    </select>
+                    <button id="btnApplyCamera" class="gold"
+                        style="width:100%; padding:10px; margin-top:12px;">Aplicar</button>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-fullscreen" id="btnFullscreen" title="Tela Cheia"><i class="fas fa-expand"></i></button>
+    </div>
+
+    <!-- CONTROLES -->
+    <div class="ctrl" id="ctrlBar">
+        <div class="row">
+            <button id="btnStart" class="red"><i class="fas fa-play"></i> INICIAR</button>
+            <button id="btnStop" disabled><i class="fas fa-stop"></i> PARAR</button>
+            <button id="btnDesligar" style="display:none;" title="Desligar câmera completamente"><i
+                    class="fas fa-power-off"></i> DESLIGAR</button>
+            <button id="btnPP" disabled><i class="fas fa-play"></i> PLAY</button>
+            <button id="btnB5"><i class="fas fa-backward-step"></i> -5s</button>
+            <button id="btnF5"><i class="fas fa-forward-step"></i> +5s</button>
+            <!-- Botão de zoom nos controles principais -->
+            <button id="btnZoom" title="Zoom"><i class="fas fa-search-plus"></i></button>
+            <button id="btnSave" class="gold"><i class="fas fa-floppy-disk"></i> SALVAR</button>
+        </div>
+        <div class="row">
+            <div class="spd-grp">
+                <span class="spd-lbl"><i class="fas fa-gauge-high"></i> VEL.</span>
+                <button id="s025">0.25×</button>
+                <button id="s05">0.5×</button>
+                <button id="s1">1×</button>
+                <button id="s2">2×</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div class="modal-overlay" id="settingsModalOverlay" style="display:none;">
+        <div class="modal" id="settingsModal">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> Configurações</h3>
+                <button class="modal-close" id="settingsModalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="set-row">
+                    <div class="cg">
+                        <span class="cg-lbl"><i class="fas fa-camera"></i> Câmera</span>
+                        <select id="camSel">
+                            <option value="">-- aguardando permissão --</option>
+                        </select>
+                        <button id="btnRefresh" style="padding:4px 10px;font-size:11px;" title="Atualizar câmeras"><i
+                                class="fas fa-rotate"></i></button>
+                    </div>
+                    <div class="cg" id="bufferMaxGroup">
+                        <span class="cg-lbl"><i class="fas fa-clock"></i> Buffer máx.</span>
+                        <input type="range" id="bufSlider" min="1" max="30" step="1" value="5" style="width:90px">
+                        <span id="bufLbl">5 min</span>
+                        <span class="ii" data-tip="Tempo máximo de vídeo mantido em memória para replay.">i</span>
+                    </div>
+                    <div class="cg">
+                        <span class="cg-lbl"><i class="fas fa-hourglass-start"></i> Delay</span>
+                        <input type="range" id="delaySlider" min="0" max="10" step="1" value="0" style="width:90px">
+                        <span id="delayLbl">0s</span>
+                        <span class="ii" data-tip="Tempo de contagem regressiva antes de iniciar a gravação.">i</span>
+                    </div>
+                </div>
+                <div class="set-row">
+                    <div class="cg">
+                        <span class="cg-lbl"><i class="fas fa-expand"></i> Resolução</span>
+                        <select id="resSel">
+                            <option value="640x480">640×480 (SD)</option>
+                            <option value="1280x720" selected>1280×720 (HD)</option>
+                            <option value="1920x1080">1920×1080 (Full HD)</option>
+                            <option value="original">Original da câmera</option>
+                        </select>
+                        <span id="resOk" class="ok"><i class="fas fa-check-circle"></i> OK</span>
+                    </div>
+                    <div class="cg">
+                        <span class="cg-lbl"><i class="fas fa-film"></i> FPS</span>
+                        <select id="fpsSel">
+                            <option value="15">15 fps</option>
+                            <option value="24">24 fps</option>
+                            <option value="30">30 fps</option>
+                            <option value="60">60 fps</option>
+                            <option value="auto" selected>Câmera padrão</option>
+                        </select>
+                        <span id="fpsOk" class="ok"><i class="fas fa-check-circle"></i> OK</span>
+                        <span class="ii" data-tip="Mais FPS = imagem mais suave, arquivo maior.">i</span>
+                    </div>
+                    <div class="cg">
+                        <span class="cg-lbl"><i class="fas fa-database"></i> Estimativa</span>
+                        <span id="sizeEst">-- MB</span>
+                        <span class="warn" id="ramWarn"><i class="fas fa-triangle-exclamation"></i> RAM</span>
+                    </div>
+                </div>
+                <div class="set-row">
+                    <div class="cg">
+                        <span class="cg-lbl"><i class="fas fa-database"></i> Modo de Buffer</span>
+                        <select id="bufferModeSel">
+                            <option value="ram">RAM (rápido)</option>
+                            <option value="disk">Disco Circular (seguro)</option>
+                            <option value="disk-full">Disco Total (gravação contínua)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="set-row">
+                    <div class="cg">
+                        <span class="cg-lbl"><i class="fas fa-folder-open"></i> Pasta de salvamento</span>
+                        <button id="btnChooseFolderModal" style="padding:4px 10px;font-size:11px;"><i
+                                class="fas fa-folder-plus"></i> Escolher</button>
+                        <button id="btnClearFolderModal" style="padding:4px 10px;font-size:11px;"><i
+                                class="fas fa-times"></i> Limpar</button>
+                        <span id="folderPathModal"
+                            style="font-size:11px;color:var(--navy);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                    </div>
+                </div>
+                <div class="set-row">
+                    <div class="cg">
+                        <span class="cg-lbl"><i class="fas fa-hdd"></i> Pasta do buffer</span>
+                        <button id="btnChooseBufferFolder" style="padding:4px 10px;font-size:11px;"><i
+                                class="fas fa-folder-plus"></i> Escolher</button>
+                        <button id="btnClearBufferFolder" style="padding:4px 10px;font-size:11px;"><i
+                                class="fas fa-times"></i> Limpar</button>
+                        <span id="bufferPath"
+                            style="font-size:11px;color:var(--navy);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                    </div>
+                    <div class="cg">
+                        <span class="cg-lbl"><i class="fas fa-server"></i> Servidor de licença</span>
+                        <input id="apiBaseInput" type="text" placeholder="http://IP-DO-PC:3001"
+                            style="flex:1;min-width:160px;padding:4px 8px;font-size:11px;">
+                        <button id="btnSaveApiBase" style="padding:4px 10px;font-size:11px;"><i
+                                class="fas fa-save"></i> Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS BAR -->
+    <div class="stats" id="statsBar">
+        <span><i class="fas fa-chart-line"></i> FPS: --</span><span>|</span>
+        <span><i class="fas fa-expand"></i> Res: --</span><span>|</span>
+        <span><i class="fas fa-database"></i> Buffer: 0 MB</span><span>|</span>
+        <span><i class="fas fa-hourglass"></i> Gravado: 0s</span><span>|</span>
+        <span><i class="fas fa-microchip"></i> RAM: --</span>
+    </div>
+    <div class="hint">
+        <i class="fas fa-circle-info"></i>
+        <strong>DVR como o YouTube:</strong> arraste a barra para voltar no tempo. A live continua em segundo plano.
+    </div>
+
+    <!-- ACTIVATE TOKEN MODAL -->
+    <div class="modal-overlay" id="activateModalOverlay" style="display:none;">
+        <div class="modal" id="activateModal">
+            <div class="modal-header">
+                <h3><i class="fas fa-key"></i> Ativar Token</h3>
+                <button class="modal-close" id="activateModalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:12px; color:var(--navy);">Insira o código do token fornecido para ativar o
+                    TatamiCam.</p>
+                <input type="text" id="tokenInput" placeholder="Ex: TATAMI-XXXX-XXXX">
+                <button id="btnActivateToken" class="gold" style="width:100%; padding:10px;"><i
+                        class="fas fa-check"></i> Ativar</button>
+                <p id="activateMsg" style="margin-top:10px; font-size:13px; text-align:center; min-height:20px;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- BLOQUEIO DE LICENÇA -->
+    <div id="licenseBlockOverlay" style="display:none;">
+        <div class="license-block-box">
+            <i class="fas fa-lock" style="font-size:48px; color:var(--red); margin-bottom:16px;"></i>
+            <h3 id="licenseBlockTitle">Licença Expirada ou Não Encontrada</h3>
+            <p id="licenseBlockMsg">Ative seu token para continuar usando o TatamiCam.</p>
+            <button id="btnBlockActivate" class="gold" style="margin-bottom:8px;">Ativar Token</button>
+            <button id="btnBlockBuy" style="background:var(--n3); margin-bottom:8px;">Comprar Token</button>
+            <button id="btnBlockExit" style="background:var(--n3);">Sair</button>
+        </div>
+    </div>
+</body>
+
+</html>
